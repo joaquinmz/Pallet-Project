@@ -10,9 +10,10 @@ Programa RAPID de una célula de paletizado ABB (IRB 1600-10/1.45, IRC5 RobotWar
 - `CalibData.mod`: work objects, `toolVacuum` y loaddata (TASK PERS).
 - `PalletProgramV1.pgf`: archivo de programa que carga RobotStudio.
 - `MEMORIA_PROYECTO.md`: **léela primero**. Layout, wobj, targets, señales, decisiones, estado del código, lógica de `Main` acordada y lista de pendientes.
-- `PalletProgram_antesMerge.bak`: copia de seguridad previa a fusionar la caja 2. No tocar.
+- `PalletProgram_antesMerge.bak`: copia de seguridad previa a fusionar la caja 2. No tocar (ignorada en git).
+- **`../PalletProgram_28-10/`: versión de trabajo actual del programa** (guardada desde RobotStudio el 28 oct). Los `.mod` de esta carpeta son la versión anterior.
 
-Repo: github.com/joaquinmz/Pallet-Project (`main` = Peru, `second-main` = caja 2 de Joaquín). Esta carpeta va por delante del repo.
+Repo: github.com/joaquinmz/Pallet-Project (`main` = Peru, `second-main` = caja 2 de Joaquín, `cambios-peru-28-10` = trabajo del 28 oct).
 
 ## Reglas al editar
 
@@ -27,4 +28,6 @@ Repo: github.com/joaquinmz/Pallet-Project (`main` = Peru, `second-main` = caja 2
 
 ## Siguiente paso
 
-Ver sección 10 de `MEMORIA_PROYECTO.md`. En orden: declarar `lastBox`, `tableFull`, `blockIndex`; escribir `Main`; corregir `ProcessBox2` (bloque `TODO`); crear `TransferStack`.
+Ver sección 10 de `MEMORIA_PROYECTO.md`. `TransferStack`, `tableFull` y los resets ya están hechos. Siguiente: completar `Main` (arranque, `WHILE TRUE`, elección de caja con `lastBox`, `WaitTime 0.1`).
+
+Peru prefiere ir paso a paso: explicar primero el porqué, sin dar el código hecho salvo que lo pida; él lo escribe en RobotStudio y lo revisamos.
