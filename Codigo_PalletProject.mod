@@ -10,80 +10,72 @@ MODULE PalletProgram
     CONST robtarget PlaceEuroRow2:=[[350,150,200],[0,1,0,0],[-2,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
     CONST robtarget PlaceEuroRow4:=[[225,525,200],[0,-0.707106781,0.707106781,0],[-2,0,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
 
-    VAR num nSafeHeight:=300;
+    CONST num SafeHeight:=300;
 
-    VAR bool CupsState{6}:=[FALSE,FALSE,FALSE,FALSE,FALSE,FALSE];
-    CONST bool CupsALL_ON{6}:=[TRUE,TRUE,TRUE,TRUE,TRUE,TRUE];
-    CONST bool CupsALL_OFF{6}:=[FALSE,FALSE,FALSE,FALSE,FALSE,FALSE];
-    CONST bool CupBox2_ON{6}:=[FALSE,FALSE,FALSE,TRUE,FALSE,FALSE];
+    VAR bool cupsState{6}:=[FALSE,FALSE,FALSE,FALSE,FALSE,FALSE];
+    CONST bool CupsAllOn{6}:=[TRUE,TRUE,TRUE,TRUE,TRUE,TRUE];
+    CONST bool CupsAllOff{6}:=[FALSE,FALSE,FALSE,FALSE,FALSE,FALSE];
+    CONST bool CupsBox2On{6}:=[FALSE,FALSE,FALSE,TRUE,FALSE,FALSE];
     VAR signaldo cupSignals{6};
-    
-    VAR num BoxHeight := 200;
+
+    CONST num BoxHeight:=200;
 
     ! BOX 1 FINITE-STATE MACHINE
 
-    CONST num Box1:=1;
-    CONST num Box2:=2;
-    CONST num Box3:=3;
-    CONST num Box4:=4;
-    CONST num Box5:=5;
-    CONST num LastBox:=6;
-    VAR num Box1FSM_STATE:=1;
-    VAR num Box1Layers := 1;
-    VAR bool fEuroPalletFull := false;
+    CONST num Box1Pos1:=1;
+    CONST num Box1Pos2:=2;
+    CONST num Box1Pos3:=3;
+    CONST num Box1Pos4:=4;
+    CONST num Box1Pos5:=5;
+    CONST num Box1Pos6:=6;
+    VAR num box1State:=1;
+    VAR num box1Layer:=1;
+    CONST num Box1MaxLayers:=2;
+    VAR bool euroPalletFull:=FALSE;
 
 
-    CONST num VACUUM_TIME:=1;
+    CONST num VacuumTime:=1;
 
-    PROC main()
+    PROC Main()
 
     ENDPROC
-    
-    PROC rBox2()
-        ApproachPoint PickConveyor2, wobjConveyor2, CupsALL_On;
-        
-        TEST Box2FSM_STATE
-        
-        CASE 
-        
-        
-    ENDPROC
 
-    PROC rBox1()
+    PROC ProcessBox1()
 
-        ApproachPoint PickConveyor1,wobjConveyor1,CupsALL_ON;
+        ApproachPoint PickConveyor1,wobjConveyor1,CupsAllOn,loadBox1;
 
-        TEST Box1FSM_STATE
-        CASE Box1:
-            ApproachPoint Offs(PlaceEuroRow4,0,0,(Box1Layers-1)*BoxHeight),wobjEuroPallet,CupsALL_OFF;
-            Box1FSM_STATE:=Box2;
-        CASE Box2:
-            ApproachPoint Offs(PlaceEuroRow4,250,0,(Box1Layers-1)*BoxHeight),wobjEuroPallet,CupsALL_OFF;
-            Box1FSM_STATE:=Box3;
-        CASE Box3:
-            ApproachPoint Offs(PlaceEuroRow4,500,0,(Box1Layers-1)*BoxHeight),wobjEuroPallet,CupsALL_OFF;
-            Box1FSM_STATE:=Box4;
-        CASE Box4:
-            ApproachPoint Offs(PlaceEuroRow4,750,0,(Box1Layers-1)*BoxHeight),wobjEuroPallet,CupsALL_OFF;
-            Box1FSM_STATE:=Box5;
-        CASE Box5:
-            ApproachPoint Offs(PlaceEuroRow2,0,0,(Box1Layers-1)*BoxHeight),wobjEuroPallet,CupsALL_OFF;
-            Box1FSM_STATE:=LastBox;
-        CASE LastBox:
-            ApproachPoint Offs(PlaceEuroRow2,500,0,(Box1Layers-1)*BoxHeight),wobjEuroPallet,CupsALL_OFF;
-            IF Box1Layers = 2 THEN
-                feuroPalletFull := TRUE;
+        TEST box1State
+        CASE Box1Pos1:
+            ApproachPoint Offs(PlaceEuroRow4,0,0,(box1Layer-1)*BoxHeight),wobjEuroPallet,CupsAllOff,load0;
+            box1State:=Box1Pos2;
+        CASE Box1Pos2:
+            ApproachPoint Offs(PlaceEuroRow4,250,0,(box1Layer-1)*BoxHeight),wobjEuroPallet,CupsAllOff,load0;
+            box1State:=Box1Pos3;
+        CASE Box1Pos3:
+            ApproachPoint Offs(PlaceEuroRow4,500,0,(box1Layer-1)*BoxHeight),wobjEuroPallet,CupsAllOff,load0;
+            box1State:=Box1Pos4;
+        CASE Box1Pos4:
+            ApproachPoint Offs(PlaceEuroRow4,750,0,(box1Layer-1)*BoxHeight),wobjEuroPallet,CupsAllOff,load0;
+            box1State:=Box1Pos5;
+        CASE Box1Pos5:
+            ApproachPoint Offs(PlaceEuroRow2,0,0,(box1Layer-1)*BoxHeight),wobjEuroPallet,CupsAllOff,load0;
+            box1State:=Box1Pos6;
+        CASE Box1Pos6:
+            ApproachPoint Offs(PlaceEuroRow2,500,0,(box1Layer-1)*BoxHeight),wobjEuroPallet,CupsAllOff,load0;
+            IF box1Layer=Box1MaxLayers THEN
+                euroPalletFull:=TRUE;
             ELSE
-                Incr Box1Layers;
+                Incr box1Layer;
             ENDIF
+            box1State:=Box1Pos1;
         DEFAULT:
-            Box1FSM_STATE:=Box1;
+            box1State:=Box1Pos1;
         ENDTEST
-        
+
     ENDPROC
 
     PROC VacuumControl(bool cups{*})
-        CupsState:=cups;
+        cupsState:=cups;
 
         FOR i FROM 1 TO Dim(cups,1) DO
             IF cups{i} THEN
@@ -93,7 +85,7 @@ MODULE PalletProgram
             ENDIF
         ENDFOR
 
-        WaitTime\InPos,VACUUM_TIME;
+        WaitTime\InPos,VacuumTime;
     ENDPROC
 
     PROC InitSignals()
@@ -105,11 +97,12 @@ MODULE PalletProgram
         AliasIO DO_Cup23,cupSignals{6};
     ENDPROC
 
-    PROC ApproachPoint(robtarget target,PERS wobjdata wobj,bool cups{*})
-        MoveJ Offs(target,0,0,nSafeHeight),v100,z10,toolVacuum\WObj:=Wobj;
-        MoveL target,v100,fine,toolVacuum\WObj:=Wobj;
-        VacuumControl(cups);
-        MoveL Offs(target,0,0,nSafeHeight),v100,z10,toolVacuum\WObj:=Wobj;
+    PROC ApproachPoint(robtarget target,PERS wobjdata wobj,bool cups{*},PERS loaddata load)
+        MoveJ Offs(target,0,0,SafeHeight),v100,z10,toolVacuum\WObj:=wobj;
+        MoveL target,v100,fine,toolVacuum\WObj:=wobj;
+        VacuumControl cups;
+        GripLoad load;
+        MoveL Offs(target,0,0,SafeHeight),v100,z10,toolVacuum\WObj:=wobj;
     ENDPROC
 
 ENDMODULE
