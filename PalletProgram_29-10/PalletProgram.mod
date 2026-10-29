@@ -6,7 +6,7 @@ MODULE PalletProgram
     ! Authors: Peru Mendivil and Joaquin Moreno
     ! Robot :   ABB IRB 1600-10/1.45, IRC5 RobotWare 6.13.02 (RobotStudio 2025)
     ! Tool  :   toolVacuum, vacuum gripper with 6 cups (one valve per cup)
-    ! Date:    2026-10-29
+    ! Date:    2026-10-30
     !
     ! The robot palletizes two products coming on two conveyors.
     ! Box 1 goes from conveyor 1 to the Euro pallet: 4-2 pattern,
@@ -17,7 +17,9 @@ MODULE PalletProgram
     ! alternates box 1 and box 2. A full pallet is replaced by the operator
     ! from outside the fence, and the robot keeps working with the other
     ! product. With the half pallet full, one block can still be finished
-    ! on the table, and it waits there.
+    ! on the table, and it waits there. If the liner stack is empty, the
+    ! robot keeps working until a liner is needed; then box 2 waits until
+    ! the operator refills the stack.
     !
     ! Structure: Main is a state machine (grafcet). It initialises the
     ! signals and then decides each cycle which box to handle, from the
@@ -35,46 +37,68 @@ MODULE PalletProgram
     !-----------------------------------------------------------------------
     ! Base targets
     !-----------------------------------------------------------------------
+    CONST jointtarget Home:=[[0,0,0,0,90,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+
+    ! Box 1
+    CONST robtarget PickConveyor1:=[[249.5,0,200],[0,0,1,0],[0,0,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+    CONST robtarget PlaceEuroRow4:=[[225,525,200],[0,-0.707106781,0.707106781,0],[-2,0,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+    CONST robtarget PlaceEuroRow2:=[[350,150,200],[0,1,0,0],[-2,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+
+    ! Box 2
     CONST robtarget PickConveyor2:=[[-35.5,-160,200],[0,-0.707106781,0.707106781,0],[0,0,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
     CONST robtarget PlaceTable:=[[-95,165,200],[0,0,1,0],[0,0,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
     CONST robtarget PickTableStack:=[[195,130,200],[0,0,1,0],[0,0,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
-    CONST robtarget PickLiner:=[[400,270,100],[0,0,1,0],[0,0,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
     CONST robtarget PlaceHalfPallet:=[[205,170,200],[0,0,1,0],[0,0,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
+
+    ! Liners
+    CONST robtarget PickLiner:=[[400,270,100],[0,0,1,0],[0,0,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
     CONST robtarget PlaceLiner:=[[400,300,210],[0,0,1,0],[0,0,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
-    CONST robtarget PickConveyor1:=[[249.5,0,200],[0,0,1,0],[0,0,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
-    CONST robtarget PlaceEuroRow2:=[[350,150,200],[0,1,0,0],[-2,0,-1,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
-    CONST robtarget PlaceEuroRow4:=[[225,525,200],[0,-0.707106781,0.707106781,0],[-2,0,0,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
-    CONST jointtarget Home:=[[0,0,0,0,90,0],[9E+09,9E+09,9E+09,9E+09,9E+09,9E+09]];
 
     !-----------------------------------------------------------------------
-    ! Parameters and variables
+    ! Speeds and heights
     !-----------------------------------------------------------------------
     CONST speeddata TransitSpeed:=v1000;
     CONST speeddata ApproachSpeed:=v300;
 
+    ! Height of every station (world)
+    CONST num ConveyorsHeight:=768;
+    CONST num TableHeight:=770;
+    CONST num LinerStandHeight:=500;
     CONST num EuroPalletHeight:=144;
     CONST num HalfPalletHeight:=144;
-    CONST num LinerStandHeight:=500;
-    CONST num TableHeight:=770;
-    CONST num ConveyorsHeight:=768;
-    CONST num TransitHeight:=1100;
-    CONST num PalletOffsetHeight:=250;
+
     CONST num Box1Height:=200;
     CONST num Box2Height:=200;
-    CONST num TotalLiners:=10;
-    VAR num linersLeft:=TotalLiners;
-    CONST num LinerHeight:=10;
+
+    ! Heights for the approach points
+    CONST num TransitHeight:=1100;
+    CONST num PalletOffsetHeight:=250;
     CONST num MinApproachHeight:=250;
 
+    ! Station identifiers for ApproachHeight
+    CONST num StationConveyor1:=1;
+    CONST num StationConveyor2:=2;
+    CONST num StationTable:=3;
+    CONST num StationLinerStand:=4;
+    CONST num StationHalfPallet:=5;
+    CONST num StationEuroPallet:=6;
+
+    !-----------------------------------------------------------------------
+    ! Vacuum gripper
+    !-----------------------------------------------------------------------
     CONST num VacuumTime:=1;
-    VAR bool cupsState{6}:=[FALSE,FALSE,FALSE,FALSE,FALSE,FALSE];
     CONST bool CupsAllOn{6}:=[TRUE,TRUE,TRUE,TRUE,TRUE,TRUE];
     CONST bool CupsAllOff{6}:=[FALSE,FALSE,FALSE,FALSE,FALSE,FALSE];
     CONST bool CupsBox2On{6}:=[FALSE,FALSE,FALSE,TRUE,FALSE,FALSE];
+    VAR bool cupsState{6}:=[FALSE,FALSE,FALSE,FALSE,FALSE,FALSE];
     VAR signaldo cupSignals{6};
 
+    !-----------------------------------------------------------------------
+    ! Box selection
+    !-----------------------------------------------------------------------
     CONST num Box1:=1;
     CONST num Box2:=2;
+    ! Last box handled, to alternate box 1 and box 2
     VAR num lastBox:=Box2;
 
     !-----------------------------------------------------------------------
@@ -96,7 +120,7 @@ MODULE PalletProgram
     VAR bool euroPalletFull:=FALSE;
 
     !-----------------------------------------------------------------------
-    ! Box 2 state machine parameters and variables
+    ! Box 2 state machine parameters and variables (table)
     !-----------------------------------------------------------------------
     CONST num Box2Pos1:=1;
     CONST num Box2Pos2:=2;
@@ -104,37 +128,43 @@ MODULE PalletProgram
     CONST num Box2Pos4:=4;
     CONST num Box2Pos5:=5;
     CONST num Box2LastPos:=6;
-    CONST num Box2MaxLayers:=3;
-    ! Distance between boxes 2 on the table, and between 3x2 blocks on the half pallet
+    ! Distance between boxes 2 on the table
     CONST num Box2Offset:=130;
+
+    VAR num box2State:=1;
+    VAR bool tableFull:=FALSE;
+
+    !-----------------------------------------------------------------------
+    ! TransferStack parameters and variables (half pallet)
+    !-----------------------------------------------------------------------
+    CONST num BlockPos1:=1;
+    CONST num BlockPos2:=2;
+    CONST num BlockPos3:=3;
+    CONST num BlockPos4:=4;
+    CONST num Box2MaxLayers:=3;
+    ! Distance between 3x2 blocks on the half pallet
     CONST num BlockOffsetX:=3*Box2Offset;
     CONST num BlockOffsetY:=2*Box2Offset;
 
-    VAR num box2State:=1;
+    VAR num blockState:=1;
+    VAR num box2Layer:=1;
     VAR bool halfPalletFull:=FALSE;
-    VAR bool tableFull:=FALSE;
+
+    !-----------------------------------------------------------------------
+    ! Liners parameters and variables
+    !-----------------------------------------------------------------------
+    CONST num TotalLiners:=10;
+    CONST num LinerHeight:=10;
+
+    VAR num linersLeft:=TotalLiners;
     ! Liner stack empty: warning to the operator, the robot keeps working
     VAR bool linerStackEmpty:=FALSE;
     ! Layer complete but the liner stack is empty: box 2 waits for the refill
     VAR bool linerMissing:=FALSE;
 
-    ! Parameters and variables for TransferStack
-    VAR num blockState:=1;
-    VAR num box2Layer:=1;
-
-    CONST num BlockPos1:=1;
-    CONST num BlockPos2:=2;
-    CONST num BlockPos3:=3;
-    CONST num BlockPos4:=4;
-
-    ! Station identifiers for ApproachHeight
-    CONST num StationConveyor1:=1;
-    CONST num StationConveyor2:=2;
-    CONST num StationTable:=3;
-    CONST num StationLinerStand:=4;
-    CONST num StationHalfPallet:=5;
-    CONST num StationEuroPallet:=6;
-
+    !-----------------------------------------------------------------------
+    ! Main: choose the box and check the operator signals
+    !-----------------------------------------------------------------------
     PROC Main()
 
         InitSignals;
@@ -144,13 +174,14 @@ MODULE PalletProgram
 
         WHILE TRUE DO
 
+            ! Alternate box 1 and box 2 when both are ready
             IF Box1Ready() AND ((NOT Box2Ready()) OR lastBox=Box2) THEN
                 ProcessBox1;
             ELSEIF Box2Ready() THEN
                 ProcessBox2;
             ENDIF
 
-
+            ! Half pallet replaced: counters first, then the waiting block
             IF halfPalletFull AND DI_HalfPalletReplaced=1 THEN
                 box2Layer:=1;
                 blockState:=BlockPos1;
@@ -161,6 +192,7 @@ MODULE PalletProgram
                 ENDIF
             ENDIF
 
+            ! Liner stack refilled: place the missing liner and the waiting block
             IF linerStackEmpty AND DI_LinersRefilled=1 THEN
                 linersLeft:=TotalLiners;
                 linerStackEmpty:=FALSE;
@@ -174,9 +206,10 @@ MODULE PalletProgram
                 ENDIF
             ENDIF
 
+            ! Euro pallet replaced
             IF euroPalletFull AND DI_EuroPalletReplaced=1 THEN
                 box1Layer:=1;
-                !Not necessary but safe
+                ! Not necessary but safe
                 box1State:=Box1Pos1;
                 euroPalletFull:=FALSE;
             ENDIF
@@ -184,6 +217,9 @@ MODULE PalletProgram
         ENDWHILE
     ENDPROC
 
+    !-----------------------------------------------------------------------
+    ! Box ready to be handled
+    !-----------------------------------------------------------------------
     FUNC bool Box1Ready()
         ! Box 1 waiting on conveyor 1 and room on the Euro pallet
         RETURN (DI_Box1Arrived=1) AND (NOT euroPalletFull);
@@ -195,7 +231,7 @@ MODULE PalletProgram
     ENDFUNC
 
     !-----------------------------------------------------------------------
-    ! Box 1 state machine
+    ! Box 1 state machine: conveyor 1 to the Euro pallet
     !-----------------------------------------------------------------------
     PROC ProcessBox1()
         ! Z of the current layer on the Euro pallet
@@ -235,12 +271,13 @@ MODULE PalletProgram
     ENDPROC
 
     !-----------------------------------------------------------------------
-    ! Box 2 state machine
+    ! Box 2 state machine: conveyor 2 to the table
     !-----------------------------------------------------------------------
     PROC ProcessBox2()
 
         ApproachPoint PickConveyor2,wobjConveyor2,CupsBox2On,loadBox2,ApproachHeight(StationConveyor2);
 
+        ! Row y=0 first and x from high to low: the gripper is never over the boxes already placed
         TEST box2State
         CASE Box2Pos1:
             ApproachPoint Offs(PlaceTable,2*Box2Offset,0,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
@@ -272,45 +309,16 @@ MODULE PalletProgram
     ENDPROC
 
     !-----------------------------------------------------------------------
-    ! Control of the vacuum of every cup
-    !-----------------------------------------------------------------------
-    PROC VacuumControl(bool cups{*})
-        cupsState:=cups;
-
-        FOR i FROM 1 TO Dim(cups,1) DO
-            IF cups{i} THEN
-                SetDO cupSignals{i},1;
-            ELSE
-                SetDO cupSignals{i},0;
-            ENDIF
-        ENDFOR
-
-        WaitTime\InPos,VacuumTime;
-    ENDPROC
-
-    !-----------------------------------------------------------------------
-    ! Assignment of logical cup signals with physical signals
-    !-----------------------------------------------------------------------
-    PROC InitSignals()
-        AliasIO DO_Cup11,cupSignals{1};
-        AliasIO DO_Cup12,cupSignals{2};
-        AliasIO DO_Cup13,cupSignals{3};
-        AliasIO DO_Cup21,cupSignals{4};
-        AliasIO DO_Cup22,cupSignals{5};
-        AliasIO DO_Cup23,cupSignals{6};
-    ENDPROC
-
-    !-----------------------------------------------------------------------
-    ! Process for box 2 configuration on half pallet
+    ! Box 2: move the 3x2 block from the table to the half pallet
     !-----------------------------------------------------------------------
     PROC TransferStack()
         ! Z of the current layer on the half pallet (block and liner)
         VAR num layerZ;
 
-        !Pick all 6 boxes 2
+        ! Pick all 6 boxes 2
         ApproachPoint PickTableStack,wobjTable,CupsAllOn,loadBox2Stack,ApproachHeight(StationTable);
 
-        !Place group of boxes
+        ! Place group of boxes
         layerZ:=HalfPalletLayerZ();
         TEST blockState
         CASE BlockPos1:
@@ -359,9 +367,10 @@ MODULE PalletProgram
     ENDFUNC
 
     !-----------------------------------------------------------------------
-    ! Approach for every point
+    ! Pick or place at a target: approach, vacuum, GripLoad and go up
     !-----------------------------------------------------------------------
     PROC ApproachPoint(robtarget target,PERS wobjdata wobj,bool cups{*},PERS loaddata load,num approachHeight)
+        ! cups: cups on/off at the target, load: load after the target
         MoveJ Offs(target,0,0,approachHeight),TransitSpeed,z10,toolVacuum\WObj:=wobj;
         MoveL target,ApproachSpeed,fine,toolVacuum\WObj:=wobj;
         VacuumControl cups;
@@ -370,7 +379,7 @@ MODULE PalletProgram
     ENDPROC
 
     !-----------------------------------------------------------------------
-    ! Calculation of approach heights
+    ! Calculation of approach heights (how much the robot goes up over the target)
     !-----------------------------------------------------------------------
     FUNC num ApproachHeight(num station)
         VAR num approachingHeight:=9E+09;
@@ -398,5 +407,36 @@ MODULE PalletProgram
         ENDTEST
         RETURN approachingHeight;
     ENDFUNC
+
+    !-----------------------------------------------------------------------
+    ! Assignment of logical cup signals with physical signals
+    !-----------------------------------------------------------------------
+    PROC InitSignals()
+        ! Call it first: VacuumControl needs it
+        AliasIO DO_Cup11,cupSignals{1};
+        AliasIO DO_Cup12,cupSignals{2};
+        AliasIO DO_Cup13,cupSignals{3};
+        AliasIO DO_Cup21,cupSignals{4};
+        AliasIO DO_Cup22,cupSignals{5};
+        AliasIO DO_Cup23,cupSignals{6};
+    ENDPROC
+
+    !-----------------------------------------------------------------------
+    ! Control of the vacuum of every cup
+    !-----------------------------------------------------------------------
+    PROC VacuumControl(bool cups{*})
+        cupsState:=cups;
+
+        FOR i FROM 1 TO Dim(cups,1) DO
+            IF cups{i} THEN
+                SetDO cupSignals{i},1;
+            ELSE
+                SetDO cupSignals{i},0;
+            ENDIF
+        ENDFOR
+
+        ! Robot stopped in position, wait for the vacuum
+        WaitTime\InPos,VacuumTime;
+    ENDPROC
 
 ENDMODULE
