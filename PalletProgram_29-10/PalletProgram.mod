@@ -6,7 +6,7 @@ MODULE PalletProgram
     ! Authors: Peru Mendivil and Joaquin Moreno
     ! Robot :   ABB IRB 1600-10/1.45, IRC5 RobotWare 6.13.02 (RobotStudio 2025)
     ! Tool  :   toolVacuum, vacuum gripper with 6 cups (one valve per cup)
-    ! Date:    2026-10-28
+    ! Date:    2026-10-29
     !
     ! The robot palletizes two products coming on two conveyors.
     ! Box 1 goes from conveyor 1 to the Euro pallet: 4-2 pattern,
@@ -176,27 +176,30 @@ MODULE PalletProgram
     ! Box 1 state machine
     !-----------------------------------------------------------------------
     PROC ProcessBox1()
+        ! Z of the current layer on the Euro pallet
+        VAR num layerZ;
 
         ApproachPoint PickConveyor1,wobjConveyor1,CupsAllOn,loadBox1,ApproachHeight(StationConveyor1);
 
+        layerZ:=(box1Layer-1)*Box1Height;
         TEST box1State
         CASE Box1Pos1:
-            ApproachPoint Offs(PlaceEuroRow4,0,0,(box1Layer-1)*Box1Height),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
+            ApproachPoint Offs(PlaceEuroRow4,0,0,layerZ),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
             box1State:=Box1Pos2;
         CASE Box1Pos2:
-            ApproachPoint Offs(PlaceEuroRow4,250,0,(box1Layer-1)*Box1Height),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
+            ApproachPoint Offs(PlaceEuroRow4,250,0,layerZ),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
             box1State:=Box1Pos3;
         CASE Box1Pos3:
-            ApproachPoint Offs(PlaceEuroRow4,500,0,(box1Layer-1)*Box1Height),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
+            ApproachPoint Offs(PlaceEuroRow4,500,0,layerZ),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
             box1State:=Box1Pos4;
         CASE Box1Pos4:
-            ApproachPoint Offs(PlaceEuroRow4,750,0,(box1Layer-1)*Box1Height),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
+            ApproachPoint Offs(PlaceEuroRow4,750,0,layerZ),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
             box1State:=Box1Pos5;
         CASE Box1Pos5:
-            ApproachPoint Offs(PlaceEuroRow2,0,0,(box1Layer-1)*Box1Height),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
+            ApproachPoint Offs(PlaceEuroRow2,0,0,layerZ),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
             box1State:=Box1LastPos;
         CASE Box1LastPos:
-            ApproachPoint Offs(PlaceEuroRow2,500,0,(box1Layer-1)*Box1Height),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
+            ApproachPoint Offs(PlaceEuroRow2,500,0,layerZ),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
             IF box1Layer=Box1MaxLayers THEN
                 euroPalletFull:=TRUE;
             ELSE
@@ -247,7 +250,7 @@ MODULE PalletProgram
     ENDPROC
 
     !-----------------------------------------------------------------------
-    ! Controll of every cups vacuum
+    ! Control of the vacuum of every cup
     !-----------------------------------------------------------------------
     PROC VacuumControl(bool cups{*})
         cupsState:=cups;
@@ -279,28 +282,31 @@ MODULE PalletProgram
     ! Process for box 2 configuration on half pallet
     !-----------------------------------------------------------------------
     PROC TransferStack()
+        ! Z of the current layer on the half pallet (block and liner)
+        VAR num layerZ;
 
         !Pick all 6 boxes 2
         ApproachPoint Offs(PickTableStack,0,0,0),wobjTable,CupsAllOn,loadBox2Stack,ApproachHeight(StationTable);
 
         !Place group of boxes
+        layerZ:=(box2Layer-1)*Box2Height+linersPlaced*LinerHeight;
         TEST blockState
         CASE BlockPos1:
-            ApproachPoint Offs(PlaceHalfPallet,0,130*2,(box2Layer-1)*Box2Height+linersPlaced*LinerHeight),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
+            ApproachPoint Offs(PlaceHalfPallet,0,130*2,layerZ),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
             blockState:=BlockPos2;
         CASE BlockPos2:
-            ApproachPoint Offs(PlaceHalfPallet,130*3,130*2,(box2Layer-1)*Box2Height+linersPlaced*LinerHeight),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
+            ApproachPoint Offs(PlaceHalfPallet,130*3,130*2,layerZ),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
             blockState:=BlockPos3;
         CASE BlockPos3:
-            ApproachPoint Offs(PlaceHalfPallet,0,0,(box2Layer-1)*Box2Height+linersPlaced*LinerHeight),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
+            ApproachPoint Offs(PlaceHalfPallet,0,0,layerZ),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
             blockState:=BlockPos4;
         CASE BlockPos4:
-            ApproachPoint Offs(PlaceHalfPallet,130*3,0,(box2Layer-1)*Box2Height+linersPlaced*LinerHeight),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
+            ApproachPoint Offs(PlaceHalfPallet,130*3,0,layerZ),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
             IF box2Layer=Box2MaxLayers THEN
                 halfPalletFull:=TRUE;
             ELSE
                 ApproachPoint Offs(PickLiner,0,0,-(TotalLiners-linersLeft)*LinerHeight),wobjLinerStack,CupsAllOn,loadLiner,ApproachHeight(StationLinerStand);
-                ApproachPoint Offs(PlaceLiner,0,0,(box2Layer-1)*Box2Height+linersPlaced*LinerHeight),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
+                ApproachPoint Offs(PlaceLiner,0,0,layerZ),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
                 Incr box2Layer;
                 Incr linersPlaced;
                 Decr linersLeft;
@@ -347,7 +353,7 @@ MODULE PalletProgram
                 approachingHeight:=MinApproachHeight;
             ENDIF
         DEFAULT:
-            ! If another target is entered the robot will announce an error trying to reach 9E+09: Safety stop
+            ! If another station is entered the robot will announce an error trying to reach 9E+09: Safety stop
         ENDTEST
         RETURN approachingHeight;
     ENDFUNC
