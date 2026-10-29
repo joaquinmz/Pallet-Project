@@ -1,6 +1,6 @@
 # PR310G – Pallet Project: memoria de decisiones
 
-Resumen de lo decidido y hecho en la estación `Pallet_Project` (RobotStudio 2025, controlador IRC5 RobotWare 6.13.02), actualizado el 29 oct 2026 (mediodía). Coordenadas en mm, respecto al mundo de la estación salvo que se diga otra cosa.
+Resumen de lo decidido y hecho en la estación `Pallet_Project` (RobotStudio 2025, controlador IRC5 RobotWare 6.13.02), actualizado el 30 oct 2026. Coordenadas en mm, respecto al mundo de la estación salvo que se diga otra cosa.
 
 Autores: Peru Mendivil y Joaquín Moreno (Group 2, JMPM). Repo: github.com/joaquinmz/Pallet-Project (rama `main` = Peru, `second-main` = caja 2 de Joaquín, `cambios-peru-28-10` = trabajo de Peru del 28 oct, `cambios-peru-29-10` = trabajo del 29 oct). **La versión de trabajo actual del programa es la carpeta `PalletProgram_29-10`** (guardada desde RobotStudio); `PalletProgram_28-10` es la de ayer y `PalletProgramV1` una anterior (con una copia de esta memoria).
 
@@ -88,6 +88,7 @@ Orientaciones elegidas para que la cadena de la caja 2 y los liners no giren la 
 | `DO_Cup11` … `DO_Cup23` | DO | Una válvula por copa (fila 1 = y +100, fila 2 = y −100; columnas x −160 / 0 / +160) |
 | `DI_Box1Arrived`, `DI_Box2Arrived` | DI | Sensores de las cintas |
 | `DI_EuroPalletReplaced`, `DI_HalfPalletReplaced` | DI | Confirmación del operario por palé (no bloqueante) |
+| `DI_LinersRefilled` | DI | Confirmación del operario: pila de liners repuesta (no bloqueante) |
 | `AI_VacuumPressure` | AI 0–10 bar | Extra de presión |
 
 En RAPID: `cupSignals{6}` enlazado con `AliasIO` en `InitSignals`; `VacuumControl` recibe un array de 6 bool (`CupsAllOn`, `CupsAllOff`, `CupsBox2On` = solo Cup21) y espera `VacuumTime` (1 s, requisito 8).
@@ -101,7 +102,14 @@ En RAPID: `cupSignals{6}` enlazado con `AliasIO` en `InitSignals`; `VacuumContro
 - Ojo RAPID: `NOT` tiene la prioridad más baja → poner paréntesis: `(DI_x=1) AND (NOT flag)`.
 - FUNC devuelve valor y se llama con `()` dentro de expresiones; PROC es una instrucción sin paréntesis.
 
-## 9. Estado del código (`PalletProgram_29-10/PalletProgram.mod`, 29 oct)
+## 9. Estado del código (`PalletProgram_29-10/PalletProgram.mod`, 29–30 oct)
+
+Refinado el 29 oct por la tarde (todo probado en simulación: caja 1, caja 2, alternancia y pila de liners vacía):
+- Identificadores de estación: `StationConveyor1`, `StationConveyor2`, `StationTable`, `StationLinerStand`, `StationHalfPallet`, `StationEuroPallet` (= 1…6); parámetro `station` en `ApproachHeight`.
+- Z de la capa calculada una vez: `layerZ` local en `ProcessBox1`; en la caja 2, `FUNC num HalfPalletLayerZ()` = `(box2Layer-1)*(Box2Height+LinerHeight)` (un liner bajo cada capa salvo la 1.ª). Se quitó `linersPlaced` (siempre valía `box2Layer-1`).
+- Offsets con nombre: `EuroRow4Offset` 250, `EuroRow2Offset` 500, `Box2Offset` 130, `BlockOffsetX` = 3·130, `BlockOffsetY` = 2·130.
+- Orden de llenado de la mesa: Y ascendente (fila y=0 primero) y X descendente (260 → 130 → 0). Con la copa de esquina la ventosa sobresale hacia −X y +Y del wobj de la mesa (`PlaceTable` girado 180° en Y), así sobresale siempre sobre huecos vacíos; con el orden anterior (y=130 primero) quedaba sobre la primera fila.
+- Pila de liners vacía (9.3).
 
 Hecho el 29 oct (detalles en 9.1 y 9.2):
 - `Main` completo y probado en simulación.
@@ -117,8 +125,8 @@ Hecho el 28 oct:
 - `ProcessBox2`: 6 posiciones en la mesa (sin cambios). En `Box2LastPos`: si `halfPalletFull` → `tableFull:=TRUE` (el bloque espera); si no → `TransferStack`. En los dos casos vuelve a `Box2Pos1`.
 - `PROC TransferStack`: coge el bloque (`CupsAllOn`, `loadBox2Stack`) y lo deja según `blockState`:
   - `BlockPos1` (0, +260), `BlockPos2` (+390, +260): fila lejana primero; `BlockPos3` (0, 0), `BlockPos4` (+390, 0).
-  - Z = `(box2Layer-1)*Box2Height + linersPlaced*LinerHeight`.
-  - En `BlockPos4` (capa completa): si `box2Layer=Box2MaxLayers` → `halfPalletFull:=TRUE`; si no → liner (`PickLiner` Z −(TotalLiners−linersLeft)·LinerHeight, `PlaceLiner` con la misma Z que la capa) **antes** de `Incr box2Layer`; `Incr linersPlaced`, `Decr linersLeft`. Vuelve a `BlockPos1`.
+  - Z = `HalfPalletLayerZ()`.
+  - En `BlockPos4` (capa completa): si `box2Layer=Box2MaxLayers` → `halfPalletFull:=TRUE`; si la pila está vacía → `linerMissing:=TRUE` (9.3); si no → `PlaceLayerLiner` (`PickLiner` Z −(TotalLiners−linersLeft)·LinerHeight, `PlaceLiner` con la misma Z que la capa, **antes** de `Incr box2Layer`; luego `Decr linersLeft`). Vuelve a `BlockPos1`.
 
 Variables de la caja 2:
 
@@ -127,8 +135,9 @@ Variables de la caja 2:
 | `box2State` | Caja en la mesa (1…6) | **No** (la mesa puede tener un bloque a medias) |
 | `blockState` | Hueco del bloque en la capa (1…4) | Sí (ya vuelve solo a 1) |
 | `box2Layer` | Capa del medio palé (1…3) | Sí (se queda en 3) |
-| `linersPlaced` | Liners en este palé | Sí (si no, el palé nuevo sale 20 mm más alto) |
-| `linersLeft` | Liners en la pila (empieza en `TotalLiners` = 10) | **No** (la pila no cambia con el palé) |
+| `linersLeft` | Liners en la pila (empieza en `TotalLiners` = 10) | **No** (la pila no cambia con el palé; se repone con `DI_LinersRefilled`) |
+| `linerStackEmpty` | Pila vacía (aviso, el robot sigue) | No (se quita al reponer) |
+| `linerMissing` | Capa terminada sin liner (la caja 2 espera) | No (se quita al poner el liner) |
 | `halfPalletFull` | Capa 3 completa | Sí |
 | `tableFull` | Bloque completo esperando en la mesa con el palé lleno | Sí, después de `TransferStack` |
 
@@ -142,7 +151,7 @@ Por qué `tableFull`: con el palé lleno la caja 2 pasa por tres momentos y un s
 
 Resets del operario (ya escritos en `Main`):
 - Europalé (`euroPalletFull AND DI_EuroPalletReplaced=1`): `box1Layer:=1`, `box1State:=Box1Pos1` (no necesario, por seguridad), `euroPalletFull:=FALSE`.
-- Medio palé (`halfPalletFull AND DI_HalfPalletReplaced=1`): `box2Layer:=1`, `linersPlaced:=0`, `blockState:=BlockPos1`, `halfPalletFull:=FALSE`; luego, si `tableFull` → `TransferStack` y `tableFull:=FALSE`. **Orden importante**: contadores antes de `TransferStack`, para que el bloque vaya a capa 1, hueco 1.
+- Medio palé (`halfPalletFull AND DI_HalfPalletReplaced=1`): `box2Layer:=1`, `blockState:=BlockPos1`, `halfPalletFull:=FALSE`; luego, si `tableFull` → `TransferStack` y `tableFull:=FALSE`. **Orden importante**: contadores antes de `TransferStack`, para que el bloque vaya a capa 1, hueco 1.
 - `IF` y no `WaitDI`: el robot sigue con el otro producto. Incluir el flag de palé lleno en la condición evita resets por pulsaciones accidentales y hace de detector de flanco (se ejecuta una vez aunque el botón siga pulsado). Alternativa nativa de RAPID para flancos: `ISignalDI` + `TRAP` (no hace falta aquí).
 
 ### 9.1 `Main` (hecho el 29 oct)
@@ -167,7 +176,7 @@ Cómo se llegó aquí:
 - Se probó un plano de tránsito único con `MoveL` en el tránsito para mantener la altura: la recta entre estaciones opuestas pasaba sobre la base del robot → **50024** (fallo de trayectoria de esquina) y **50027** (eje fuera de rango). Se volvió a `MoveJ`. El `MoveJ` hace un arco (reparte los ángulos, no la posición del TCP): que suba no es problema; que baje sí.
 - En los palés, subir hasta 1100 suponía ~756 mm de `MoveL` por bloque con el brazo casi estirado.
 
-Solución actual: `FUNC num ApproachHeight(num target)` con un `TEST` por estación. Los identificadores de estación son `Conveyor1SafeHeight`…`EuroPalletSafeHeight` (= 1…6, nombre pendiente de cambiar). Las alturas en mundo de cada estación son CONST (`ConveyorsHeight` 768, `TableHeight` 770, `LinerStandHeight` 500, `EuroPalletHeight` / `HalfPalletHeight` 144). `DEFAULT` deja 9E+09 a propósito: un identificador erróneo da error de alcance y para el robot.
+Solución actual: `FUNC num ApproachHeight(num station)` con un `TEST` por estación (`StationConveyor1`…`StationEuroPallet`, = 1…6). Las alturas en mundo de cada estación son CONST (`ConveyorsHeight` 768, `TableHeight` 770, `LinerStandHeight` 500, `EuroPalletHeight` / `HalfPalletHeight` 144). `DEFAULT` deja 9E+09 a propósito: un identificador erróneo da error de alcance y para el robot.
 
 | Estación | TCP en tránsito (mundo) | Sube sobre el target |
 |---|---|---|
@@ -179,20 +188,25 @@ Solución actual: `FUNC num ApproachHeight(num target)` con un `TEST` por estaci
 
 - **850** = tope de la pila de liners (600) + bloque (200) + 50: el bloque pasa por encima de los liners entre la mesa y el medio palé.
 - **Mínimo 250** = caja (200) + 50: el bloque que lleva no choca con los de al lado en la misma capa. Sin él, en la capa 3 solo subía 86 mm.
-- La FUNC lee `box1Layer`, `box2Layer`, `linersPlaced` y `linersLeft` en el momento de la llamada: en `TransferStack` las llamadas van **antes** de los `Incr`/`Decr`.
+- La FUNC lee `box1Layer`, `box2Layer` y `linersLeft` en el momento de la llamada: en `PlaceLayerLiner` las llamadas van **antes** de los `Incr`/`Decr`.
+
+### 9.3 Pila de liners vacía (29 oct)
+
+Dos flags, porque son dos situaciones distintas:
+- `linerStackEmpty`: se pone en `PlaceLayerLiner` cuando `linersLeft` llega a 0. Solo es un aviso: el robot sigue y el operario tiene toda una capa (4 bloques) para reponer sin que el robot pare.
+- `linerMissing`: se pone en `BlockPos4` si la capa está completa y `linerStackEmpty`. `ProcessBox2` trata `halfPalletFull OR linerMissing` igual: la mesa se sigue llenando y el bloque espera (`tableFull`). La caja 1 no se para. No se puede empezar la capa siguiente: el liner va encima de la terminada y debajo de la nueva.
+- Reset en `Main`: `linerStackEmpty AND DI_LinersRefilled=1` → `linersLeft:=TotalLiners` (antes de coger el liner, la altura depende de él), `linerStackEmpty:=FALSE`; si `linerMissing` → `PlaceLayerLiner`, y si `tableFull` → `TransferStack`.
+- Limitación: solo cuenta la reposición con la pila vacía (mismo criterio de flanco que los palés).
+- Probado con `linersLeft:=1` temporal: reponiendo durante la capa 2 el robot no para; sin reponer, espera y sigue al activar la señal. Sin mensajes en el FlexPendant de momento (se dejan para el final).
 
 Simulación de la caja 2 (vídeo v3): sin colisiones salvo con `LinerStack` al coger los liners: casi colisión en el 1.º (normal, las copas apoyan) y colisión a z 598,8 en el 2.º, porque el modelo de la pila es fijo (10 liners, techo 600) y el código coge cada liner 10 mm más abajo. Es un efecto de la simulación, no un fallo.
 
 ## 10. Pendiente
 
 Código:
-- **Mesa:** con el TCP a 1100, la caja 2 que lleva el robot tiene la base a 900 y las cajas ya puestas el techo a 970. Al llegar a un hueco puede chocar con las vecinas (no se ve en la simulación porque las cajas no van enganchadas). Opciones: bajar la mesa, cambiar el orden de llenado para no pasar sobre vecinas, o subir el tránsito (a +300 ya no llegaba).
-- **Probar con la versión de hoy el ciclo de la caja 1 y la alternancia** de las dos cajas (el vídeo v3 es solo de la caja 2).
-- Renombrar los identificadores de estación (`Conveyor1SafeHeight`… → p. ej. `StationConveyor1`; parámetro `target` de `ApproachHeight` → `station`). Hay un comentario `! Changename` en el código.
-- Fecha del encabezado del módulo: sigue en 2026-10-28.
-- Pila de liners vacía (`linersLeft=0`): ahora nada detiene al robot. Aviso al operario / señal de reposición.
-- Opcional: quitar `linersPlaced` (siempre vale `box2Layer-1`).
-- Comprobar orden de llenado de la mesa (memoria: Y ascendente, X descendente; el código empieza por Y=130).
+- **Mesa:** con el TCP a 1100, la caja 2 que lleva el robot tiene la base a 900 y las cajas ya puestas el techo a 970. Al llegar a un hueco puede chocar con las vecinas (no se ve en la simulación porque las cajas no van enganchadas). El orden de llenado nuevo ya evita que la ventosa quede sobre cajas puestas; falta comprobar el tránsito con las cajas enganchadas. Si choca: bajar la mesa o subir el tránsito (a +300 ya no llegaba).
+- `cupsState`: se escribe en `VacuumControl` pero no se lee. Quitarlo o usarlo para el extra de presión.
+- Mensajes al FlexPendant (pila vacía, palé lleno) y `DEFAULT` de `ApproachHeight`: al final.
 - Ordenar carpetas: `PalletProgram_29-10` es la versión buena; decidir qué hacer con `PalletProgram_28-10` y `PalletProgramV1`.
 
 Simulación:
