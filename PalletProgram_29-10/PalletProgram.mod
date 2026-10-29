@@ -117,13 +117,13 @@ MODULE PalletProgram
     CONST num BlockPos3:=3;
     CONST num BlockPos4:=4;
 
-    ! Changename
-    CONST num Conveyor1SafeHeight:=1;
-    CONST num Conveyor2SafeHeight:=2;
-    CONST num TableSafeHeight:=3;
-    CONST num LinersStandSafeHeight:=4;
-    CONST num HalfPalletSafeHeight:=5;
-    CONST num EuroPalletSafeHeight:=6;
+    ! Station identifiers for ApproachHeight
+    CONST num StationConveyor1:=1;
+    CONST num StationConveyor2:=2;
+    CONST num StationTable:=3;
+    CONST num StationLinerStand:=4;
+    CONST num StationHalfPallet:=5;
+    CONST num StationEuroPallet:=6;
 
     PROC Main()
 
@@ -177,26 +177,26 @@ MODULE PalletProgram
     !-----------------------------------------------------------------------
     PROC ProcessBox1()
 
-        ApproachPoint PickConveyor1,wobjConveyor1,CupsAllOn,loadBox1,ApproachHeight(Conveyor1SafeHeight);
+        ApproachPoint PickConveyor1,wobjConveyor1,CupsAllOn,loadBox1,ApproachHeight(StationConveyor1);
 
         TEST box1State
         CASE Box1Pos1:
-            ApproachPoint Offs(PlaceEuroRow4,0,0,(box1Layer-1)*Box1Height),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(EuroPalletSafeHeight);
+            ApproachPoint Offs(PlaceEuroRow4,0,0,(box1Layer-1)*Box1Height),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
             box1State:=Box1Pos2;
         CASE Box1Pos2:
-            ApproachPoint Offs(PlaceEuroRow4,250,0,(box1Layer-1)*Box1Height),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(EuroPalletSafeHeight);
+            ApproachPoint Offs(PlaceEuroRow4,250,0,(box1Layer-1)*Box1Height),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
             box1State:=Box1Pos3;
         CASE Box1Pos3:
-            ApproachPoint Offs(PlaceEuroRow4,500,0,(box1Layer-1)*Box1Height),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(EuroPalletSafeHeight);
+            ApproachPoint Offs(PlaceEuroRow4,500,0,(box1Layer-1)*Box1Height),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
             box1State:=Box1Pos4;
         CASE Box1Pos4:
-            ApproachPoint Offs(PlaceEuroRow4,750,0,(box1Layer-1)*Box1Height),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(EuroPalletSafeHeight);
+            ApproachPoint Offs(PlaceEuroRow4,750,0,(box1Layer-1)*Box1Height),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
             box1State:=Box1Pos5;
         CASE Box1Pos5:
-            ApproachPoint Offs(PlaceEuroRow2,0,0,(box1Layer-1)*Box1Height),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(EuroPalletSafeHeight);
+            ApproachPoint Offs(PlaceEuroRow2,0,0,(box1Layer-1)*Box1Height),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
             box1State:=Box1LastPos;
         CASE Box1LastPos:
-            ApproachPoint Offs(PlaceEuroRow2,500,0,(box1Layer-1)*Box1Height),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(EuroPalletSafeHeight);
+            ApproachPoint Offs(PlaceEuroRow2,500,0,(box1Layer-1)*Box1Height),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
             IF box1Layer=Box1MaxLayers THEN
                 euroPalletFull:=TRUE;
             ELSE
@@ -214,26 +214,26 @@ MODULE PalletProgram
     !-----------------------------------------------------------------------
     PROC ProcessBox2()
 
-        ApproachPoint PickConveyor2,wobjConveyor2,CupsBox2On,loadBox2,ApproachHeight(Conveyor2SafeHeight);
+        ApproachPoint PickConveyor2,wobjConveyor2,CupsBox2On,loadBox2,ApproachHeight(StationConveyor2);
 
         TEST box2State
         CASE Box2Pos1:
-            ApproachPoint Offs(PlaceTable,260,130,0),wobjTable,CupsAllOff,load0,ApproachHeight(TableSafeHeight);
+            ApproachPoint Offs(PlaceTable,260,130,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
             box2State:=Box2Pos2;
         CASE Box2Pos2:
-            ApproachPoint Offs(PlaceTable,130,130,0),wobjTable,CupsAllOff,load0,ApproachHeight(TableSafeHeight);
+            ApproachPoint Offs(PlaceTable,130,130,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
             box2State:=Box2Pos3;
         CASE Box2Pos3:
-            ApproachPoint Offs(PlaceTable,0,130,0),wobjTable,CupsAllOff,load0,ApproachHeight(TableSafeHeight);
+            ApproachPoint Offs(PlaceTable,0,130,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
             box2State:=Box2Pos4;
         CASE Box2Pos4:
-            ApproachPoint Offs(PlaceTable,260,0,0),wobjTable,CupsAllOff,load0,ApproachHeight(TableSafeHeight);
+            ApproachPoint Offs(PlaceTable,260,0,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
             box2State:=Box2Pos5;
         CASE Box2Pos5:
-            ApproachPoint Offs(PlaceTable,130,0,0),wobjTable,CupsAllOff,load0,ApproachHeight(TableSafeHeight);
+            ApproachPoint Offs(PlaceTable,130,0,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
             box2State:=Box2LastPos;
         CASE Box2LastPos:
-            ApproachPoint Offs(PlaceTable,0,0,0),wobjTable,CupsAllOff,load0,ApproachHeight(TableSafeHeight);
+            ApproachPoint Offs(PlaceTable,0,0,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
             IF halfPalletFull THEN
                 tableFull:=TRUE;
             ELSE
@@ -281,26 +281,26 @@ MODULE PalletProgram
     PROC TransferStack()
 
         !Pick all 6 boxes 2
-        ApproachPoint Offs(PickTableStack,0,0,0),wobjTable,CupsAllOn,loadBox2Stack,ApproachHeight(TableSafeHeight);
+        ApproachPoint Offs(PickTableStack,0,0,0),wobjTable,CupsAllOn,loadBox2Stack,ApproachHeight(StationTable);
 
         !Place group of boxes
         TEST blockState
         CASE BlockPos1:
-            ApproachPoint Offs(PlaceHalfPallet,0,130*2,(box2Layer-1)*Box2Height+linersPlaced*LinerHeight),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(HalfPalletSafeHeight);
+            ApproachPoint Offs(PlaceHalfPallet,0,130*2,(box2Layer-1)*Box2Height+linersPlaced*LinerHeight),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
             blockState:=BlockPos2;
         CASE BlockPos2:
-            ApproachPoint Offs(PlaceHalfPallet,130*3,130*2,(box2Layer-1)*Box2Height+linersPlaced*LinerHeight),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(HalfPalletSafeHeight);
+            ApproachPoint Offs(PlaceHalfPallet,130*3,130*2,(box2Layer-1)*Box2Height+linersPlaced*LinerHeight),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
             blockState:=BlockPos3;
         CASE BlockPos3:
-            ApproachPoint Offs(PlaceHalfPallet,0,0,(box2Layer-1)*Box2Height+linersPlaced*LinerHeight),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(HalfPalletSafeHeight);
+            ApproachPoint Offs(PlaceHalfPallet,0,0,(box2Layer-1)*Box2Height+linersPlaced*LinerHeight),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
             blockState:=BlockPos4;
         CASE BlockPos4:
-            ApproachPoint Offs(PlaceHalfPallet,130*3,0,(box2Layer-1)*Box2Height+linersPlaced*LinerHeight),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(HalfPalletSafeHeight);
+            ApproachPoint Offs(PlaceHalfPallet,130*3,0,(box2Layer-1)*Box2Height+linersPlaced*LinerHeight),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
             IF box2Layer=Box2MaxLayers THEN
                 halfPalletFull:=TRUE;
             ELSE
-                ApproachPoint Offs(PickLiner,0,0,-(TotalLiners-linersLeft)*LinerHeight),wobjLinerStack,CupsAllOn,loadLiner,ApproachHeight(LinersStandSafeHeight);
-                ApproachPoint Offs(PlaceLiner,0,0,(box2Layer-1)*Box2Height+linersPlaced*LinerHeight),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(HalfPalletSafeHeight);
+                ApproachPoint Offs(PickLiner,0,0,-(TotalLiners-linersLeft)*LinerHeight),wobjLinerStack,CupsAllOn,loadLiner,ApproachHeight(StationLinerStand);
+                ApproachPoint Offs(PlaceLiner,0,0,(box2Layer-1)*Box2Height+linersPlaced*LinerHeight),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
                 Incr box2Layer;
                 Incr linersPlaced;
                 Decr linersLeft;
@@ -325,23 +325,23 @@ MODULE PalletProgram
     !-----------------------------------------------------------------------
     ! Calculation of approach heights
     !-----------------------------------------------------------------------
-    FUNC num ApproachHeight(num target)
+    FUNC num ApproachHeight(num station)
         VAR num approachingHeight:=9E+09;
-        TEST target
-        CASE Conveyor1SafeHeight:
+        TEST station
+        CASE StationConveyor1:
             approachingHeight:=TransitHeight-ConveyorsHeight-Box1Height;
-        CASE Conveyor2SafeHeight:
+        CASE StationConveyor2:
             approachingHeight:=TransitHeight-ConveyorsHeight-Box2Height;
-        CASE TableSafeHeight:
+        CASE StationTable:
             approachingHeight:=TransitHeight-TableHeight-Box2Height;
-        CASE LinersStandSafeHeight:
+        CASE StationLinerStand:
             approachingHeight:=TransitHeight-LinerStandHeight-linersLeft*LinerHeight;
-        CASE HalfPalletSafeHeight:
+        CASE StationHalfPallet:
             approachingHeight:=TransitHeight-HalfPalletHeight-box2Layer*Box2Height-linersPlaced*LinerHeight-PalletOffsetHeight;
             IF approachingHeight<MinApproachHeight THEN
                 approachingHeight:=MinApproachHeight;
             ENDIF
-        CASE EuroPalletSafeHeight:
+        CASE StationEuroPallet:
             approachingHeight:=TransitHeight-EuroPalletHeight-Box1Height*box1Layer-PalletOffsetHeight;
             IF approachingHeight<MinApproachHeight THEN
                 approachingHeight:=MinApproachHeight;
