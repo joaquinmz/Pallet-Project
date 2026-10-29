@@ -87,6 +87,9 @@ MODULE PalletProgram
     CONST num Box1Pos5:=5;
     CONST num Box1LastPos:=6;
     CONST num Box1MaxLayers:=2;
+    ! Distance between boxes in the row of 4 and in the row of 2
+    CONST num EuroRow4Offset:=250;
+    CONST num EuroRow2Offset:=500;
 
     VAR num box1State:=1;
     VAR num box1Layer:=1;
@@ -102,11 +105,14 @@ MODULE PalletProgram
     CONST num Box2Pos5:=5;
     CONST num Box2LastPos:=6;
     CONST num Box2MaxLayers:=3;
+    ! Distance between boxes 2 on the table, and between 3x2 blocks on the half pallet
+    CONST num Box2Offset:=130;
+    CONST num BlockOffsetX:=3*Box2Offset;
+    CONST num BlockOffsetY:=2*Box2Offset;
 
     VAR num box2State:=1;
     VAR bool halfPalletFull:=FALSE;
     VAR bool tableFull:=FALSE;
-    VAR num linersPlaced:=0;
     ! Liner stack empty: warning to the operator, the robot keeps working
     VAR bool linerStackEmpty:=FALSE;
     ! Layer complete but the liner stack is empty: box 2 waits for the refill
@@ -147,7 +153,6 @@ MODULE PalletProgram
 
             IF halfPalletFull AND DI_HalfPalletReplaced=1 THEN
                 box2Layer:=1;
-                linersPlaced:=0;
                 blockState:=BlockPos1;
                 halfPalletFull:=FALSE;
                 IF tableFull THEN
@@ -204,19 +209,19 @@ MODULE PalletProgram
             ApproachPoint Offs(PlaceEuroRow4,0,0,layerZ),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
             box1State:=Box1Pos2;
         CASE Box1Pos2:
-            ApproachPoint Offs(PlaceEuroRow4,250,0,layerZ),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
+            ApproachPoint Offs(PlaceEuroRow4,EuroRow4Offset,0,layerZ),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
             box1State:=Box1Pos3;
         CASE Box1Pos3:
-            ApproachPoint Offs(PlaceEuroRow4,500,0,layerZ),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
+            ApproachPoint Offs(PlaceEuroRow4,2*EuroRow4Offset,0,layerZ),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
             box1State:=Box1Pos4;
         CASE Box1Pos4:
-            ApproachPoint Offs(PlaceEuroRow4,750,0,layerZ),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
+            ApproachPoint Offs(PlaceEuroRow4,3*EuroRow4Offset,0,layerZ),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
             box1State:=Box1Pos5;
         CASE Box1Pos5:
             ApproachPoint Offs(PlaceEuroRow2,0,0,layerZ),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
             box1State:=Box1LastPos;
         CASE Box1LastPos:
-            ApproachPoint Offs(PlaceEuroRow2,500,0,layerZ),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
+            ApproachPoint Offs(PlaceEuroRow2,EuroRow2Offset,0,layerZ),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
             IF box1Layer=Box1MaxLayers THEN
                 euroPalletFull:=TRUE;
             ELSE
@@ -238,22 +243,22 @@ MODULE PalletProgram
 
         TEST box2State
         CASE Box2Pos1:
-            ApproachPoint Offs(PlaceTable,260,130,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
+            ApproachPoint Offs(PlaceTable,2*Box2Offset,0,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
             box2State:=Box2Pos2;
         CASE Box2Pos2:
-            ApproachPoint Offs(PlaceTable,130,130,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
+            ApproachPoint Offs(PlaceTable,Box2Offset,0,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
             box2State:=Box2Pos3;
         CASE Box2Pos3:
-            ApproachPoint Offs(PlaceTable,0,130,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
+            ApproachPoint Offs(PlaceTable,0,0,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
             box2State:=Box2Pos4;
         CASE Box2Pos4:
-            ApproachPoint Offs(PlaceTable,260,0,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
+            ApproachPoint Offs(PlaceTable,2*Box2Offset,Box2Offset,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
             box2State:=Box2Pos5;
         CASE Box2Pos5:
-            ApproachPoint Offs(PlaceTable,130,0,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
+            ApproachPoint Offs(PlaceTable,Box2Offset,Box2Offset,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
             box2State:=Box2LastPos;
         CASE Box2LastPos:
-            ApproachPoint Offs(PlaceTable,0,0,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
+            ApproachPoint Offs(PlaceTable,0,Box2Offset,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
             IF halfPalletFull OR linerMissing THEN
                 tableFull:=TRUE;
             ELSE
@@ -303,22 +308,22 @@ MODULE PalletProgram
         VAR num layerZ;
 
         !Pick all 6 boxes 2
-        ApproachPoint Offs(PickTableStack,0,0,0),wobjTable,CupsAllOn,loadBox2Stack,ApproachHeight(StationTable);
+        ApproachPoint PickTableStack,wobjTable,CupsAllOn,loadBox2Stack,ApproachHeight(StationTable);
 
         !Place group of boxes
         layerZ:=HalfPalletLayerZ();
         TEST blockState
         CASE BlockPos1:
-            ApproachPoint Offs(PlaceHalfPallet,0,130*2,layerZ),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
+            ApproachPoint Offs(PlaceHalfPallet,0,BlockOffsetY,layerZ),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
             blockState:=BlockPos2;
         CASE BlockPos2:
-            ApproachPoint Offs(PlaceHalfPallet,130*3,130*2,layerZ),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
+            ApproachPoint Offs(PlaceHalfPallet,BlockOffsetX,BlockOffsetY,layerZ),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
             blockState:=BlockPos3;
         CASE BlockPos3:
             ApproachPoint Offs(PlaceHalfPallet,0,0,layerZ),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
             blockState:=BlockPos4;
         CASE BlockPos4:
-            ApproachPoint Offs(PlaceHalfPallet,130*3,0,layerZ),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
+            ApproachPoint Offs(PlaceHalfPallet,BlockOffsetX,0,layerZ),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
             IF box2Layer=Box2MaxLayers THEN
                 halfPalletFull:=TRUE;
             ELSEIF linerStackEmpty THEN
@@ -339,7 +344,6 @@ MODULE PalletProgram
         ApproachPoint Offs(PickLiner,0,0,-(TotalLiners-linersLeft)*LinerHeight),wobjLinerStack,CupsAllOn,loadLiner,ApproachHeight(StationLinerStand);
         ApproachPoint Offs(PlaceLiner,0,0,HalfPalletLayerZ()),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
         Incr box2Layer;
-        Incr linersPlaced;
         Decr linersLeft;
         IF linersLeft=0 THEN
             linerStackEmpty:=TRUE;
@@ -350,7 +354,8 @@ MODULE PalletProgram
     ! Z of the current layer on the half pallet (block and liner)
     !-----------------------------------------------------------------------
     FUNC num HalfPalletLayerZ()
-        RETURN (box2Layer-1)*Box2Height+linersPlaced*LinerHeight;
+        ! One liner under every layer except the first one
+        RETURN (box2Layer-1)*(Box2Height+LinerHeight);
     ENDFUNC
 
     !-----------------------------------------------------------------------
@@ -379,7 +384,7 @@ MODULE PalletProgram
         CASE StationLinerStand:
             approachingHeight:=TransitHeight-LinerStandHeight-linersLeft*LinerHeight;
         CASE StationHalfPallet:
-            approachingHeight:=TransitHeight-HalfPalletHeight-box2Layer*Box2Height-linersPlaced*LinerHeight-PalletOffsetHeight;
+            approachingHeight:=TransitHeight-HalfPalletHeight-HalfPalletLayerZ()-Box2Height-PalletOffsetHeight;
             IF approachingHeight<MinApproachHeight THEN
                 approachingHeight:=MinApproachHeight;
             ENDIF
