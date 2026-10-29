@@ -11,16 +11,16 @@ Programa RAPID de una célula de paletizado ABB (IRB 1600-10/1.45, IRC5 RobotWar
 - `PalletProgramV1.pgf`: archivo de programa que carga RobotStudio.
 - `MEMORIA_PROYECTO.md`: **léela primero**. Layout, wobj, targets, señales, decisiones, estado del código, lógica de `Main` acordada y lista de pendientes.
 - `PalletProgram_antesMerge.bak`: copia de seguridad previa a fusionar la caja 2. No tocar (ignorada en git).
-- **`../PalletProgram_28-10/`: versión de trabajo actual del programa** (guardada desde RobotStudio el 28 oct). Los `.mod` de esta carpeta son la versión anterior.
+- **`../PalletProgram_29-10/`: versión de trabajo actual del programa** (guardada desde RobotStudio el 29 oct). `../PalletProgram_28-10/` es la del día anterior y los `.mod` de esta carpeta, una versión más antigua.
 
-Repo: github.com/joaquinmz/Pallet-Project (`main` = Peru, `second-main` = caja 2 de Joaquín, `cambios-peru-28-10` = trabajo del 28 oct).
+Repo: github.com/joaquinmz/Pallet-Project (`main` = Peru, `second-main` = caja 2 de Joaquín, `cambios-peru-28-10` = trabajo del 28 oct, `cambios-peru-29-10` = trabajo del 29 oct).
 
 ## Reglas al editar
 
 - Convención de nombres: VAR / PERS / parámetros en camelCase; CONST / PROC / FUNC / MODULE en PascalCase; señales con prefijo `DI_`, `DO_`, `AI_`, `AO_`. Estados: `Box1Pos1…Box1LastPos`, `Box2Pos1…Box2LastPos`.
 - `NOT` tiene la prioridad más baja en RAPID: usar paréntesis, `(DI_x=1) AND (NOT flag)`.
 - Llamadas a PROC sin paréntesis (`VacuumControl cups;`); FUNC con `()`.
-- Un target base por estación; el resto con `Offs`. Todo pick/place pasa por `ApproachPoint(target, wobj, cups, load)`.
+- Un target base por estación; el resto con `Offs`. Todo pick/place pasa por `ApproachPoint(target, wobj, cups, load, approachHeight)`, con la altura calculada por `ApproachHeight(estación)`.
 - Mantener las secciones comentadas con `!-----` y el encabezado del módulo.
 - No cambiar targets ni wobj sin que Peru lo pida: están medidos en la estación.
 - Archivos solo en ASCII (sin tildes en los comentarios del código).
@@ -28,6 +28,6 @@ Repo: github.com/joaquinmz/Pallet-Project (`main` = Peru, `second-main` = caja 2
 
 ## Siguiente paso
 
-Ver sección 10 de `MEMORIA_PROYECTO.md`. `TransferStack`, `tableFull` y los resets ya están hechos. Siguiente: completar `Main` (arranque, `WHILE TRUE`, elección de caja con `lastBox`, `WaitTime 0.1`).
+Ver sección 10 de `MEMORIA_PROYECTO.md`. `Main`, `Home`, velocidades y alturas de aproximación (`ApproachHeight`) ya están hechos y la caja 2 funciona en simulación. Siguiente: probar caja 1 + alternancia con la versión del 29 oct y resolver el choque posible de la caja 2 con sus vecinas en la mesa.
 
 Peru prefiere ir paso a paso: explicar primero el porqué, sin dar el código hecho salvo que lo pida; él lo escribe en RobotStudio y lo revisamos.

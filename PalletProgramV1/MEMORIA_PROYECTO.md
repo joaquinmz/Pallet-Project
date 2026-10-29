@@ -1,8 +1,10 @@
 # PR310G – Pallet Project: memoria de decisiones
 
-Resumen de lo decidido y hecho en la estación `Pallet_Project` (RobotStudio 2025, controlador IRC5 RobotWare 6.13.02), actualizado el 28 oct 2026 (noche). Coordenadas en mm, respecto al mundo de la estación salvo que se diga otra cosa.
+Resumen de lo decidido y hecho en la estación `Pallet_Project` (RobotStudio 2025, controlador IRC5 RobotWare 6.13.02), actualizado el 29 oct 2026 (mediodía). Coordenadas en mm, respecto al mundo de la estación salvo que se diga otra cosa.
 
-Autores: Peru Mendivil y Joaquín Moreno (Group 2, JMPM). Repo: github.com/joaquinmz/Pallet-Project (rama `main` = Peru, `second-main` = caja 2 de Joaquín, `cambios-peru-28-10` = trabajo de Peru del 28 oct). **La versión de trabajo actual del programa es la carpeta `PalletProgram_28-10`** (guardada desde RobotStudio); `PalletProgramV1` tiene la versión anterior y esta memoria.
+Autores: Peru Mendivil y Joaquín Moreno (Group 2, JMPM). Repo: github.com/joaquinmz/Pallet-Project (rama `main` = Peru, `second-main` = caja 2 de Joaquín, `cambios-peru-28-10` = trabajo de Peru del 28 oct, `cambios-peru-29-10` = trabajo del 29 oct). **La versión de trabajo actual del programa es la carpeta `PalletProgram_29-10`** (guardada desde RobotStudio); `PalletProgram_28-10` es la de ayer y `PalletProgramV1` una anterior (con una copia de esta memoria).
+
+Vídeo de la simulación de la caja 2 (29 oct, 9:30 min, medio palé completo con los dos liners): `RobotStudio 10-29 v3 comprimido.mp4`. Los vídeos originales sin comprimir están en `.gitignore` (el v3 original pesa 126 MB, más que el límite de GitHub).
 
 ## 1. Robot y herramienta
 
@@ -14,6 +16,7 @@ Autores: Peru Mendivil y Joaquín Moreno (Group 2, JMPM). Repo: github.com/joaqu
 | Herramienta | `toolVacuum`, TCP (0, 0, 175), en el plano de los labios de las copas | Medido en RobotStudio: labios Z 644,88 − cara de montaje 469,88 |
 | Copas | 6 copas Ø50 en x = −160 / 0 / +160, y = ±100 | Medido |
 | Masa ventosa | 1 kg provisional | **Pendiente de estimar** |
+| `Home` | `CONST jointtarget` [0, 0, 0, 0, **90**, 0] | Postura de reposo con la ventosa vertical (con el eje 5 a 30 quedaba inclinada 60° y las copas pasaban cerca de la caja 2). Se va con `MoveAbsJ` al arrancar `Main` |
 
 ## 2. Layout
 
@@ -98,9 +101,15 @@ En RAPID: `cupSignals{6}` enlazado con `AliasIO` en `InitSignals`; `VacuumContro
 - Ojo RAPID: `NOT` tiene la prioridad más baja → poner paréntesis: `(DI_x=1) AND (NOT flag)`.
 - FUNC devuelve valor y se llama con `()` dentro de expresiones; PROC es una instrucción sin paréntesis.
 
-## 9. Estado del código (`PalletProgram_28-10/PalletProgram.mod`, 28 oct noche)
+## 9. Estado del código (`PalletProgram_29-10/PalletProgram.mod`, 29 oct)
 
-Hecho:
+Hecho el 29 oct (detalles en 9.1 y 9.2):
+- `Main` completo y probado en simulación.
+- `Home` (`MoveAbsJ`), velocidades con nombre (`TransitSpeed` v1000 para el `MoveJ` de tránsito, `ApproachSpeed` v300 para bajar y subir).
+- `ApproachPoint` con un quinto parámetro `approachHeight` (cuánto sube sobre el target), calculado por `FUNC num ApproachHeight(station)`.
+- Arreglos de nombres: `TotalLiners`, `linersLeft`, `Box1`/`Box2`.
+
+Hecho el 28 oct:
 - Encabezado del programa, secciones comentadas, nombres según la convención.
 - `ProcessBox1` (máquina de estados de 6 posiciones × 2 capas, pone `euroPalletFull`).
 - `VacuumControl`, `InitSignals`, `ApproachPoint(target, wobj, cups, load)` con `GripLoad`.
@@ -110,7 +119,6 @@ Hecho:
   - `BlockPos1` (0, +260), `BlockPos2` (+390, +260): fila lejana primero; `BlockPos3` (0, 0), `BlockPos4` (+390, 0).
   - Z = `(box2Layer-1)*Box2Height + linersPlaced*LinerHeight`.
   - En `BlockPos4` (capa completa): si `box2Layer=Box2MaxLayers` → `halfPalletFull:=TRUE`; si no → liner (`PickLiner` Z −(TotalLiners−linersLeft)·LinerHeight, `PlaceLiner` con la misma Z que la capa) **antes** de `Incr box2Layer`; `Incr linersPlaced`, `Decr linersLeft`. Vuelve a `BlockPos1`.
-- `Main`: solo los dos `IF` de reset del operario (falta el resto, ver abajo).
 
 Variables de la caja 2:
 
@@ -137,41 +145,60 @@ Resets del operario (ya escritos en `Main`):
 - Medio palé (`halfPalletFull AND DI_HalfPalletReplaced=1`): `box2Layer:=1`, `linersPlaced:=0`, `blockState:=BlockPos1`, `halfPalletFull:=FALSE`; luego, si `tableFull` → `TransferStack` y `tableFull:=FALSE`. **Orden importante**: contadores antes de `TransferStack`, para que el bloque vaya a capa 1, hueco 1.
 - `IF` y no `WaitDI`: el robot sigue con el otro producto. Incluir el flag de palé lleno en la condición evita resets por pulsaciones accidentales y hace de detector de flanco (se ejecuta una vez aunque el botón siga pulsado). Alternativa nativa de RAPID para flancos: `ISignalDI` + `TRAP` (no hace falta aquí).
 
-`Main` completo (lógica acordada, falta escribir arranque, bucle y elección de caja):
+### 9.1 `Main` (hecho el 29 oct)
 
-```
-PROC Main()
-    InitSignals;                 ! primero: sin AliasIO, VacuumControl falla
-    VacuumControl CupsAllOff;
-    GripLoad load0;
-    ! MoveAbsJ Home (pendiente)
-    WHILE TRUE DO
-        IF Box1Ready() AND ((NOT Box2Ready()) OR lastBox=2) THEN
-            ProcessBox1;  lastBox:=1;
-        ELSEIF Box2Ready() THEN
-            ProcessBox2;  lastBox:=2;
-        ENDIF
-        ! los dos IF de reset (ya escritos)
-        WaitTime 0.1;            ! evita que el bucle gire sin parar si no hay cajas
-    ENDWHILE
-ENDPROC
-```
+Orden: `InitSignals` (primero: sin `AliasIO`, `VacuumControl` falla) → `VacuumControl CupsAllOff` → `GripLoad load0` → `MoveAbsJ Home,v100,fine,toolVacuum` → `WHILE TRUE`:
+1. Elección de caja: `IF Box1Ready() AND ((NOT Box2Ready()) OR lastBox=Box2)` → `ProcessBox1`; `ELSEIF Box2Ready()` → `ProcessBox2`.
+2. Los dos `IF` de reset del operario.
+3. `WaitTime 0.1` (sin él, sin cajas el bucle gira sin parar).
 
 Claves:
-- `lastBox` (VAR num := 2, sin declarar todavía): si llegan las dos a la vez empieza la caja 1.
+- `CONST num Box1:=1`, `Box2:=2`; `VAR num lastBox:=Box2` → si llegan las dos a la vez empieza la caja 1. `lastBox` se actualiza al final de `ProcessBox1` / `ProcessBox2`.
 - La alternancia solo se aplica si la otra caja también puede procesarse (evita el bloqueo con un palé lleno).
+- `MoveAbsJ` y no `MoveJ` para Home: un `jointtarget` son los ángulos de los ejes, sin cinemática inversa ni wobj; siempre la misma postura. Sin `\NoEOffs` (no hay ejes externos).
+- Antes de cada prueba tras un error: RAPID → Puntero de programa → *PP a Main* (las VAR vuelven a su valor inicial).
+
+### 9.2 Alturas de aproximación y tránsito (29 oct)
+
+`ApproachPoint(target, wobj, cups, load, approachHeight)`: `MoveJ` a `Offs(target,0,0,approachHeight)` (tránsito, `TransitSpeed`), `MoveL` al target (`ApproachSpeed`, `fine`), vacío + `GripLoad`, `MoveL` de vuelta arriba.
+
+Cómo se llegó aquí:
+- Con `SafeHeight` fijo de 300 sobre el target, la cinta 1 (≈ 980 mm de la base) daba **50050 Posición fuera del área de trabajo**: el punto de aproximación (z 1268) estaba fuera de alcance. Después pasó lo mismo en la mesa.
+- Se probó un plano de tránsito único con `MoveL` en el tránsito para mantener la altura: la recta entre estaciones opuestas pasaba sobre la base del robot → **50024** (fallo de trayectoria de esquina) y **50027** (eje fuera de rango). Se volvió a `MoveJ`. El `MoveJ` hace un arco (reparte los ángulos, no la posición del TCP): que suba no es problema; que baje sí.
+- En los palés, subir hasta 1100 suponía ~756 mm de `MoveL` por bloque con el brazo casi estirado.
+
+Solución actual: `FUNC num ApproachHeight(num target)` con un `TEST` por estación. Los identificadores de estación son `Conveyor1SafeHeight`…`EuroPalletSafeHeight` (= 1…6, nombre pendiente de cambiar). Las alturas en mundo de cada estación son CONST (`ConveyorsHeight` 768, `TableHeight` 770, `LinerStandHeight` 500, `EuroPalletHeight` / `HalfPalletHeight` 144). `DEFAULT` deja 9E+09 a propósito: un identificador erróneo da error de alcance y para el robot.
+
+| Estación | TCP en tránsito (mundo) | Sube sobre el target |
+|---|---|---|
+| Cintas 1 y 2 (techo caja 968) | `TransitHeight` 1100 | 132 |
+| Mesa: dejar caja 2 y coger bloque (techo 970) | 1100 | 130 |
+| Pila de liners (techo 500 + `linersLeft`·10) | 1100 | 500 con la pila llena |
+| Europalé | 850 = 1100 − `PalletOffsetHeight` (250) | 506 (capa 1), 306 (capa 2) |
+| Medio palé (bloques y liner) | 850, con mínimo `MinApproachHeight` 250 | 506, 296, **250** (capa 3, manda el mínimo) |
+
+- **850** = tope de la pila de liners (600) + bloque (200) + 50: el bloque pasa por encima de los liners entre la mesa y el medio palé.
+- **Mínimo 250** = caja (200) + 50: el bloque que lleva no choca con los de al lado en la misma capa. Sin él, en la capa 3 solo subía 86 mm.
+- La FUNC lee `box1Layer`, `box2Layer`, `linersPlaced` y `linersLeft` en el momento de la llamada: en `TransferStack` las llamadas van **antes** de los `Incr`/`Decr`.
+
+Simulación de la caja 2 (vídeo v3): sin colisiones salvo con `LinerStack` al coger los liners: casi colisión en el 1.º (normal, las copas apoyan) y colisión a z 598,8 en el 2.º, porque el modelo de la pila es fijo (10 liners, techo 600) y el código coge cada liner 10 mm más abajo. Es un efecto de la simulación, no un fallo.
 
 ## 10. Pendiente
 
 Código:
-- `Main`: arranque, `WHILE TRUE`, elección de caja con `lastBox` (declararla), resets dentro del bucle, `WaitTime 0.1`.
-- Mayúsculas: `totalLiners` → `TotalLiners` (declaración de `linersLeft`); `Decr LinersLeft` → `linersLeft`. Compila igual (RAPID no distingue mayúsculas), pero no sigue la convención.
+- **Mesa:** con el TCP a 1100, la caja 2 que lleva el robot tiene la base a 900 y las cajas ya puestas el techo a 970. Al llegar a un hueco puede chocar con las vecinas (no se ve en la simulación porque las cajas no van enganchadas). Opciones: bajar la mesa, cambiar el orden de llenado para no pasar sobre vecinas, o subir el tránsito (a +300 ya no llegaba).
+- **Probar con la versión de hoy el ciclo de la caja 1 y la alternancia** de las dos cajas (el vídeo v3 es solo de la caja 2).
+- Renombrar los identificadores de estación (`Conveyor1SafeHeight`… → p. ej. `StationConveyor1`; parámetro `target` de `ApproachHeight` → `station`). Hay un comentario `! Changename` en el código.
+- Fecha del encabezado del módulo: sigue en 2026-10-28.
 - Pila de liners vacía (`linersLeft=0`): ahora nada detiene al robot. Aviso al operario / señal de reposición.
 - Opcional: quitar `linersPlaced` (siempre vale `box2Layer-1`).
 - Comprobar orden de llenado de la mesa (memoria: Y ascendente, X descendente; el código empieza por Y=130).
-- Altura de tránsito: `SafeHeight` es relativa al target; comprobar que el bloque no choca con la pila de liners (tope z 600) en el trayecto mesa → medio palé.
-- `Home` como `CONST jointtarget` con `MoveAbsJ`; velocidades como constantes con nombre.
-- Ordenar carpetas: `PalletProgram_28-10` es la versión buena; decidir si `PalletProgramV1` se borra o se sustituye.
+- Ordenar carpetas: `PalletProgram_29-10` es la versión buena; decidir qué hacer con `PalletProgram_28-10` y `PalletProgramV1`.
+
+Simulación:
+- Enganchar las cajas, el bloque y el liner a la herramienta (lógica de estación, *Attacher/Detacher*): así se ven en la presentación y la detección de colisiones comprueba también la carga.
+- Conjunto de colisión: A = robot + herramienta; B = cintas, mesa, soporte y pila de liners, palés (las cajas no, porque se tocan a propósito). Casi colisión a 50 mm.
+- Grabar el vídeo final con la cámara más alejada (en la mesa la ventosa se sale del encuadre).
 
 Resto:
 - Estimar masa y CdG de la ventosa.
@@ -189,4 +216,7 @@ Resto:
 - **Dos contadores por producto en la caja 2:** `box2State` (mesa) y `blockState` (palé) son independientes; así el `CASE` de la mesa no cambia y no hace falta un `CASE` de 24 estados.
 - **Convención de nombres:** por la primera letra se sabe si un nombre puede cambiar (minúscula) o no (mayúscula).
 - **FUNC vs PROC:** `Box1Ready()` / `Box2Ready()` son FUNC porque devuelven un bool que se evalúa en el momento de la llamada.
+- **`MoveJ` en el tránsito, `MoveL` solo en vertical:** el `MoveL` entre estaciones lejanas pasa cerca de la base (singularidades, ejes al límite); el `MoveJ` hace un arco, y lo que se comprueba es que no baje sobre nada (rastreo de TCP + conjunto de colisión).
+- **Alturas de aproximación:** una FUNC con una fórmula por estación, para que la regla esté en un solo sitio. Plano de 1100 en cintas y mesa, de 850 en los palés (pasar sobre los liners con el bloque) y mínimo de 250 sobre el target (no chocar con las vecinas de la capa).
+- **Colisión con `LinerStack` al coger el 2.º liner:** el modelo de la pila es fijo; en la realidad ese liner ya no estaría.
 - Seguridad: cortinas de luz en los huecos de los palés, puerta enclavada, paradas de emergencia; reposición de liners y túnel de las cintas en el Excel de riesgos.
