@@ -107,6 +107,10 @@ MODULE PalletProgram
     VAR bool halfPalletFull:=FALSE;
     VAR bool tableFull:=FALSE;
     VAR num linersPlaced:=0;
+    ! Liner stack empty: warning to the operator, the robot keeps working
+    VAR bool linerStackEmpty:=FALSE;
+    ! Layer complete but the liner stack is empty: box 2 waits for the refill
+    VAR bool linerMissing:=FALSE;
 
     ! Parameters and variables for TransferStack
     VAR num blockState:=1;
@@ -149,6 +153,19 @@ MODULE PalletProgram
                 IF tableFull THEN
                     TransferStack;
                     tableFull:=FALSE;
+                ENDIF
+            ENDIF
+
+            IF linerStackEmpty AND DI_LinersRefilled=1 THEN
+                linersLeft:=TotalLiners;
+                linerStackEmpty:=FALSE;
+                IF linerMissing THEN
+                    linerMissing:=FALSE;
+                    PlaceLayerLiner;
+                    IF tableFull THEN
+                        TransferStack;
+                        tableFull:=FALSE;
+                    ENDIF
                 ENDIF
             ENDIF
 
@@ -237,7 +254,7 @@ MODULE PalletProgram
             box2State:=Box2LastPos;
         CASE Box2LastPos:
             ApproachPoint Offs(PlaceTable,0,0,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
-            IF halfPalletFull THEN
+            IF halfPalletFull OR linerMissing THEN
                 tableFull:=TRUE;
             ELSE
                 TransferStack;
@@ -289,7 +306,7 @@ MODULE PalletProgram
         ApproachPoint Offs(PickTableStack,0,0,0),wobjTable,CupsAllOn,loadBox2Stack,ApproachHeight(StationTable);
 
         !Place group of boxes
-        layerZ:=(box2Layer-1)*Box2Height+linersPlaced*LinerHeight;
+        layerZ:=HalfPalletLayerZ();
         TEST blockState
         CASE BlockPos1:
             ApproachPoint Offs(PlaceHalfPallet,0,130*2,layerZ),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
@@ -304,18 +321,37 @@ MODULE PalletProgram
             ApproachPoint Offs(PlaceHalfPallet,130*3,0,layerZ),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
             IF box2Layer=Box2MaxLayers THEN
                 halfPalletFull:=TRUE;
+            ELSEIF linerStackEmpty THEN
+                linerMissing:=TRUE;
             ELSE
-                ApproachPoint Offs(PickLiner,0,0,-(TotalLiners-linersLeft)*LinerHeight),wobjLinerStack,CupsAllOn,loadLiner,ApproachHeight(StationLinerStand);
-                ApproachPoint Offs(PlaceLiner,0,0,layerZ),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
-                Incr box2Layer;
-                Incr linersPlaced;
-                Decr linersLeft;
+                PlaceLayerLiner;
             ENDIF
             blockState:=BlockPos1;
         DEFAULT:
             blockState:=BlockPos1;
         ENDTEST
     ENDPROC
+
+    !-----------------------------------------------------------------------
+    ! Liner on the layer just finished, then the next layer starts
+    !-----------------------------------------------------------------------
+    PROC PlaceLayerLiner()
+        ApproachPoint Offs(PickLiner,0,0,-(TotalLiners-linersLeft)*LinerHeight),wobjLinerStack,CupsAllOn,loadLiner,ApproachHeight(StationLinerStand);
+        ApproachPoint Offs(PlaceLiner,0,0,HalfPalletLayerZ()),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
+        Incr box2Layer;
+        Incr linersPlaced;
+        Decr linersLeft;
+        IF linersLeft=0 THEN
+            linerStackEmpty:=TRUE;
+        ENDIF
+    ENDPROC
+
+    !-----------------------------------------------------------------------
+    ! Z of the current layer on the half pallet (block and liner)
+    !-----------------------------------------------------------------------
+    FUNC num HalfPalletLayerZ()
+        RETURN (box2Layer-1)*Box2Height+linersPlaced*LinerHeight;
+    ENDFUNC
 
     !-----------------------------------------------------------------------
     ! Approach for every point
