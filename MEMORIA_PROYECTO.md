@@ -2,7 +2,7 @@
 
 Resumen de lo decidido y hecho en la estación `Pallet_Project` (RobotStudio 2025, controlador IRC5 RobotWare 6.13.02), actualizado el 30 oct 2026. Coordenadas en mm, respecto al mundo de la estación salvo que se diga otra cosa.
 
-Autores: Peru Mendivil y Joaquín Moreno (Group 2, JMPM). Repo: github.com/joaquinmz/Pallet-Project (rama `main` = Peru, `second-main` = caja 2 de Joaquín, `cambios-peru-28-10` = trabajo de Peru del 28 oct, `cambios-peru-29-10` = trabajo del 29 oct). **La versión de trabajo actual del programa es la carpeta `PalletProgram_29-10`** (guardada desde RobotStudio); `PalletProgram_28-10` es la de ayer y `PalletProgramV1` una anterior (con una copia de esta memoria).
+Autores: Peru Mendivil y Joaquín Moreno (Group 2, JMPM). Repo: github.com/joaquinmz/Pallet-Project (rama `main` = Peru, `second-main` = caja 2 de Joaquín, `cambios-peru-28-10` = trabajo de Peru del 28 oct, `cambios-peru-29-10` = trabajo del 29 oct, `cambios-peru-30-10` = smart components del 30 oct). **La versión de trabajo actual del programa es la carpeta `PalletProgram_29-10`** (guardada desde RobotStudio); `PalletProgram_28-10` es la de ayer y `PalletProgramV1` una anterior (con una copia de esta memoria).
 
 Vídeo de la simulación de la caja 2 (29 oct, 9:30 min, medio palé completo con los dos liners): `RobotStudio 10-29 v3 comprimido.mp4`. Los vídeos originales sin comprimir están en `.gitignore` (el v3 original pesa 126 MB, más que el límite de GitHub).
 
@@ -201,7 +201,58 @@ Dos flags, porque son dos situaciones distintas:
 
 Simulación de la caja 2 (vídeo v3): sin colisiones salvo con `LinerStack` al coger los liners: casi colisión en el 1.º (normal, las copas apoyan) y colisión a z 598,8 en el 2.º, porque el modelo de la pila es fijo (10 liners, techo 600) y el código coge cada liner 10 mm más abajo. Es un efecto de la simulación, no un fallo.
 
-## 10. Pendiente
+## 10. Smart components (30 oct)
+
+Vídeo de la prueba de la cinta 1 con smart components: `RobotStudio 10-30_6.mp4`. El código RAPID no cambió: los smart components solo sustituyen las señales que antes se activaban a mano.
+
+### 10.1 `SC_Conveyor1` (cinta 1)
+
+| Componente | Configuración | Para qué |
+|---|---|---|
+| `Box1` (plantilla, en Componentes) | Origen local movido al centro de la caja; centro en (338,5, 3390, 868) = principio de la cinta 1 (fin de la cinta medido en Y 3660, menos 250 de media caja y 20 de margen). Caja 250 × 500 × 200 | Lo que copia el `Source` |
+| `Source` | `Source` = `Box1`, `Position` (338,5, 3390, 868), `Transient` ✓ | Crea cada caja. `Position` es respecto al padre (la estación), no a la plantilla |
+| `Queue` | Nada manual | Lista de cajas que mueve el `LinearMover` |
+| `LinearMover` | `Object` = `Queue`, `Direction` (0, −1, 0), `Speed` 250, `Reference` Global, `Execute` ✓ | Mueve las cajas hacia el robot |
+| `PlaneSensor` | `Origin` (188,5, 675, 788), `Axis1` (300, 0, 0), `Axis2` (0, 0, 150), `Active` ✓ | Plano vertical en el fin de la cinta (cara delantera de la caja en Y 670), de z 788 (20 sobre los rodillos) a 938 (por debajo del techo 968, para no detectar la ventosa) |
+| `LogicGate` | `NOT` | Al llevarse el robot la caja (sensor 1 → 0), pide la siguiente |
+| `SimulationEvents` | Nada manual | Primera caja al pulsar *Reproducir* (añadido el 30 oct; comprobar que sale una sola) |
+| Señal `BoxArrived` | DigitalOutput | Salida del componente hacia el controlador |
+
+Enlazamiento: `Source.Copy` → `Queue.Back`. Conexiones: `Source.Executed` → `Queue.Enqueue`; `PlaneSensor.SensorOut` → `Queue.Dequeue` (la caja se para), → `SC_Conveyor1.BoxArrived` y → `LogicGate.InputA`; `LogicGate.Output` → `Source.Execute`; `SimulationEvents.SimulationStarted` → `Source.Execute`. Lógica de estación: `SC_Conveyor1.BoxArrived` → `DI_Box1Arrived`.
+
+Comprobado: la caja centrada en el fin de la cinta tiene el techo en (338,5, 919,5, 968) = `PickConveyor1` en mundo.
+
+### 10.2 `SC_Gripper` (ventosa)
+
+| Componente | Configuración | Para qué |
+|---|---|---|
+| `LineSensor_2` | `Start` (−530,33, 530,33, 956,5), `End` (−530,33, 530,33, 924,5) con el robot en Home; conectado a `PalletizingVacuumTool/PalletizingVacuumTool` (sin actualizar posición) | Línea en el TCP de `toolVacuum`, de 10 mm por encima a 22 mm por debajo del plano de las copas |
+| `Attacher` | `Parent` = `PalletizingVacuumTool/PalletizingVacuumTool`, `Mount` sin marcar | Engancha la pieza que detecta el sensor |
+| `Detacher` | `KeepPosition` ✓ | La suelta donde está |
+| `LogicGate` | `NOT` | `Grip` 1 → 0 activa el `Detacher` |
+| Señal `Grip` | DigitalInput | Entrada desde el controlador |
+
+Enlazamientos: `LineSensor_2.SensedPart` → `Attacher.Child`; `Attacher.Child` → `Detacher.Child`. Conexiones: `Grip` → `Attacher.Execute` y → `LogicGate.InputA`; `LogicGate.Output` → `Detacher.Execute`. Lógica de estación: `DO_Cup21` → `SC_Gripper.Grip`. `DO_Cup21` es la única copa activa en todas las recogidas (`CupsAllOn` y `CupsBox2On`) y a 0 en todas las dejadas.
+
+TCP de `toolVacuum` en Home (0, 0, 0, 0, 90, 0): (−530,33, 530,33, 946,5), RX −180 (herramienta vertical). Comprobado con la geometría del IRB 1600-1.45: brida en Z 1121,5 − 175 de herramienta; alcance horizontal 750 girado 135°.
+
+### 10.3 Estado guardado `Inicio`
+
+*Simulación → ˅ bajo Restablecer → Guardar estado actual*: `Pallet_Project` incluido entero (✓, no ■), con valores de propiedad, señales de E/S (objetos y controlador), valores de eje, visibilidad y posición/orientación/conexión; sin comportamiento físico ni valores de variable (al *Reproducir*, el PP vuelve a `Main` y las VAR a su valor inicial). Se guarda dentro de la estación (Ctrl+S). Cada prueba: **Parar → ˅ Restablecer → `Inicio` → Reproducir**.
+
+### 10.4 Errores encontrados (para no repetirlos)
+
+- `Box1` tenía el origen de la pieza en el origen del mundo y la geometría desplazada dentro (`Cuerpo` con origen en una esquina, (214, 670, 768)): *Establecer posición* daba 0. Se arregló con *Establecer origen local*.
+- `Execute` del `Source` fuera de la simulación crea una pieza normal que se queda en la estación (`Transient` solo borra las creadas durante la simulación). Las copias temporales no salen en el árbol.
+- `PlaneSensor` con un 100 por defecto en la Y de `Axis2`: plano inclinado y la caja se paraba antes del fin de la cinta.
+- `LineSensor`: `Start`, `End` y `Length` se recalculan entre sí. Escribir primero `Length` y después `Start` y `End`; el valor está guardado cuando `Length` cuadra y no lleva `~`.
+- `LineSensor` solo detecta cuando la línea **cruza una cara** de la pieza: empezando 2 mm bajo las copas, la línea quedaba entera dentro de la caja y no detectaba nada. Por eso empieza 10 mm por encima.
+- Conectar el `SC_Gripper` a la herramienta no arrastra su sensor: hay que conectar el propio `LineSensor` a `PalletizingVacuumTool/PalletizingVacuumTool`.
+- `Attacher.Parent` se había quedado en `Detacher (SC_Gripper)`.
+- Con el estado `Inicio` guardado (salida del NOT ya a 1), el NOT ya no daba flanco al arrancar y no salía la primera caja: de ahí `SimulationEvents`.
+- Aviso 50024 *Fallo de trayectoria de esquina*: el último `MoveL` de `ApproachPoint` acaba en `z10` y `Main` se queda esperando caja; el robot para en el punto. No es un error; se quita con `fine` en la subida si molesta en el vídeo.
+
+## 11. Pendiente
 
 Código:
 - **Mesa:** con el TCP a 1100, la caja 2 que lleva el robot tiene la base a 900 y las cajas ya puestas el techo a 970. Al llegar a un hueco puede chocar con las vecinas (no se ve en la simulación porque las cajas no van enganchadas). El orden de llenado nuevo ya evita que la ventosa quede sobre cajas puestas; falta comprobar el tránsito con las cajas enganchadas. Si choca: bajar la mesa o subir el tránsito (a +300 ya no llegaba).
@@ -210,7 +261,13 @@ Código:
 - Ordenar carpetas: `PalletProgram_29-10` es la versión buena; decidir qué hacer con `PalletProgram_28-10` y `PalletProgramV1`.
 
 Simulación:
-- Enganchar las cajas, el bloque y el liner a la herramienta (lógica de estación, *Attacher/Detacher*): así se ven en la presentación y la detección de colisiones comprueba también la carga.
+- Cinta 1 y caja 1 hechas (10.1, 10.2). Falta:
+  - **Cinta 2** (`SC_Conveyor2` con `Box2`, igual que la cinta 1). `Box2` probablemente tiene el mismo problema de origen local que `Box1`.
+  - **Caja 2 en la ventosa:** se coge con la copa de esquina Cup21 (−160, −100), y el `LineSensor_2` está en el centro: hace falta un segundo sensor bajo Cup21 (misma señal `DO_Cup21`).
+  - **Bloque 3×2:** un `Attacher` engancha una sola pieza y el bloque son 6 cajas. Decidir cómo (varios sensores, `SenseMultiple`, o agrupar las cajas).
+  - **Liners:** coger el de arriba de la pila.
+  - Comprobar el choque de la mesa (pendiente de código) con las cajas enganchadas.
+- Las cajas van ya enganchadas en la cinta 1: así se ven en la presentación y la detección de colisiones comprueba también la carga.
 - Conjunto de colisión: A = robot + herramienta; B = cintas, mesa, soporte y pila de liners, palés (las cajas no, porque se tocan a propósito). Casi colisión a 50 mm.
 - Grabar el vídeo final con la cámara más alejada (en la mesa la ventosa se sale del encuadre).
 
@@ -220,7 +277,7 @@ Resto:
 - Correo a My Legendi: inercias, liner (masa/material), caja 2 con una copa, simulación de la señal analógica, alcance del Station Viewer.
 - Comprobar que el Pack and Go de RobotStudio 2025 abre en la 2024.4 de las salas.
 
-## 11. Notas para la defensa
+## 12. Notas para la defensa
 
 - **Caja 2 con una sola copa:** la caja (130×130) es menor que el patrón de copas. Se coge con la copa de esquina (−160, −100) y válvula por copa; con la central, las copas laterales pisarían cajas vecinas en la mesa. La mesa se llena por filas en Y ascendente y, en cada fila, X descendente. Herramienta estándar de ElegantTools (el enunciado permite otra si se justifica).
 - **Giro de la base 135°:** para que el eje 1 no cruce su límite en la cadena caja 2.
