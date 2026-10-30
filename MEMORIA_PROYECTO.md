@@ -203,7 +203,7 @@ Simulación de la caja 2 (vídeo v3): sin colisiones salvo con `LinerStack` al c
 
 ## 10. Smart components (30 oct)
 
-Vídeo de la prueba de la cinta 1 con smart components: `RobotStudio 10-30_6.mp4`. El código RAPID no cambió: los smart components solo sustituyen las señales que antes se activaban a mano.
+Vídeo de la prueba de la cinta 1 con smart components: `RobotStudio 10-30_6.mp4`. La estación con los smart components y el estado `Inicio` está en el Pack and Go `Pallet_Project.rspag` (30 oct); el de `Descargas` del 26 oct es anterior. El código RAPID no cambió: los smart components solo sustituyen las señales que antes se activaban a mano.
 
 ### 10.1 `SC_Conveyor1` (cinta 1)
 
