@@ -308,7 +308,9 @@ Código:
 
 Simulación:
 - Cinta 1, caja 1, cinta 2, caja 2 en la ventosa, bloque 3×2 y liners hechos y probados el 1 nov (10.1, 10.2, 10.5). El código de los liners no cambió: `PickLiner` ya bajaba 10 mm por liner. Ciclo completo hasta llenar los dos palés probado por Peru el 1 nov: todo bien. Falta:
-  - **Cambio de palé en simulación:** las cajas puestas se quedan en el palé. Al activar `DI_EuroPalletReplaced` o `DI_HalfPalletReplaced`, las nuevas se pondrían sobre ellas. Tampoco reaparecen los liners con `DI_LinersRefilled`.
+  - **Cambio de palé en simulación:** al activar `DI_EuroPalletReplaced` o `DI_HalfPalletReplaced` tienen que desaparecer las cajas puestas en ese palé (y los liners, en el medio palé). Ahora se quedan y las nuevas se pondrían sobre ellas.
+  - **Reposición de liners en simulación:** tampoco reaparecen los liners con `DI_LinersRefilled`.
+  - **Vídeo final:** grabarlo entero, hasta llenar los dos palés, con la cámara más alejada (el vídeo del 1 nov termina en la capa 1 del medio palé).
 - Las cajas van ya enganchadas en la cinta 1: así se ven en la presentación y la detección de colisiones comprueba también la carga.
 - Conjunto de colisión: A = robot + herramienta; B = cintas, mesa, soporte y palés (las cajas y los liners no, porque se tocan a propósito). Casi colisión a 50 mm.
 - Grabar el vídeo final con la cámara más alejada (en la mesa la ventosa se sale del encuadre).
