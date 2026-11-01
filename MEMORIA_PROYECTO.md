@@ -1,8 +1,8 @@
 # PR310G – Pallet Project: memoria de decisiones
 
-Resumen de lo decidido y hecho en la estación `Pallet_Project` (RobotStudio 2025, controlador IRC5 RobotWare 6.13.02), actualizado el 30 oct 2026. Coordenadas en mm, respecto al mundo de la estación salvo que se diga otra cosa.
+Resumen de lo decidido y hecho en la estación `Pallet_Project` (RobotStudio 2025, controlador IRC5 RobotWare 6.13.02), actualizado el 1 nov 2026. Coordenadas en mm, respecto al mundo de la estación salvo que se diga otra cosa.
 
-Autores: Peru Mendivil y Joaquín Moreno (Group 2, JMPM). Repo: github.com/joaquinmz/Pallet-Project (rama `main` = Peru, `second-main` = caja 2 de Joaquín, `cambios-peru-28-10` = trabajo de Peru del 28 oct, `cambios-peru-29-10` = trabajo del 29 oct, `cambios-peru-30-10` = smart components del 30 oct). **La versión de trabajo actual del programa es la carpeta `PalletProgram_29-10`** (guardada desde RobotStudio); `PalletProgram_28-10` es la de ayer y `PalletProgramV1` una anterior (con una copia de esta memoria).
+Autores: Peru Mendivil y Joaquín Moreno (Group 2, JMPM). Repo: github.com/joaquinmz/Pallet-Project (rama `main` = Peru, `second-main` = caja 2 de Joaquín, `cambios-peru-28-10` = trabajo de Peru del 28 oct, `cambios-peru-29-10` = trabajo del 29 oct, `cambios-peru-30-10` = smart components del 30 oct, `cambios-peru-01-11` = cinta 2 del 1 nov). **La versión de trabajo actual del programa es la carpeta `PalletProgram_29-10`** (guardada desde RobotStudio); `PalletProgram_28-10` es la de ayer y `PalletProgramV1` una anterior (con una copia de esta memoria).
 
 Vídeo de la simulación de la caja 2 (29 oct, 9:30 min, medio palé completo con los dos liners): `RobotStudio 10-29 v3 comprimido.mp4`. Los vídeos originales sin comprimir están en `.gitignore` (el v3 original pesa 126 MB, más que el límite de GitHub).
 
@@ -201,9 +201,9 @@ Dos flags, porque son dos situaciones distintas:
 
 Simulación de la caja 2 (vídeo v3): sin colisiones salvo con `LinerStack` al coger los liners: casi colisión en el 1.º (normal, las copas apoyan) y colisión a z 598,8 en el 2.º, porque el modelo de la pila es fijo (10 liners, techo 600) y el código coge cada liner 10 mm más abajo. Es un efecto de la simulación, no un fallo.
 
-## 10. Smart components (30 oct)
+## 10. Smart components (30 oct y 1 nov)
 
-Vídeo de la prueba de la cinta 1 con smart components: `RobotStudio 10-30_6.mp4`. La estación con los smart components y el estado `Inicio` está en el Pack and Go `Pallet_Project.rspag` (30 oct); el de `Descargas` del 26 oct es anterior. El código RAPID no cambió: los smart components solo sustituyen las señales que antes se activaban a mano.
+Vídeo de la prueba de la cinta 1 con smart components: `RobotStudio 10-30_6.mp4`. El Pack and Go `Pallet_Project.rspag` del repo es del 30 oct: tiene la cinta 1 y la ventosa, pero **no la cinta 2 ni el estado `Inicio_01-11_v2` del 1 nov** (esos están en la estación local, guardada con Ctrl+S, hasta hacer otro Pack and Go). El de `Descargas` del 26 oct es anterior. El código RAPID no cambió: los smart components solo sustituyen las señales que antes se activaban a mano.
 
 ### 10.1 `SC_Conveyor1` (cinta 1)
 
@@ -215,7 +215,7 @@ Vídeo de la prueba de la cinta 1 con smart components: `RobotStudio 10-30_6.mp4
 | `LinearMover` | `Object` = `Queue`, `Direction` (0, −1, 0), `Speed` 250, `Reference` Global, `Execute` ✓ | Mueve las cajas hacia el robot |
 | `PlaneSensor` | `Origin` (188,5, 675, 788), `Axis1` (300, 0, 0), `Axis2` (0, 0, 150), `Active` ✓ | Plano vertical en el fin de la cinta (cara delantera de la caja en Y 670), de z 788 (20 sobre los rodillos) a 938 (por debajo del techo 968, para no detectar la ventosa) |
 | `LogicGate` | `NOT` | Al llevarse el robot la caja (sensor 1 → 0), pide la siguiente |
-| `SimulationEvents` | Nada manual | Primera caja al pulsar *Reproducir* (añadido el 30 oct; comprobar que sale una sola) |
+| `SimulationEvents` | Nada manual | Primera caja al pulsar *Reproducir*. Sale una sola si antes se carga el estado guardado; si no, salen dos (ver 10.5) |
 | Señal `BoxArrived` | DigitalOutput | Salida del componente hacia el controlador |
 
 Enlazamiento: `Source.Copy` → `Queue.Back`. Conexiones: `Source.Executed` → `Queue.Enqueue`; `PlaneSensor.SensorOut` → `Queue.Dequeue` (la caja se para), → `SC_Conveyor1.BoxArrived` y → `LogicGate.InputA`; `LogicGate.Output` → `Source.Execute`; `SimulationEvents.SimulationStarted` → `Source.Execute`. Lógica de estación: `SC_Conveyor1.BoxArrived` → `DI_Box1Arrived`.
@@ -236,9 +236,9 @@ Enlazamientos: `LineSensor_2.SensedPart` → `Attacher.Child`; `Attacher.Child` 
 
 TCP de `toolVacuum` en Home (0, 0, 0, 0, 90, 0): (−530,33, 530,33, 946,5), RX −180 (herramienta vertical). Comprobado con la geometría del IRB 1600-1.45: brida en Z 1121,5 − 175 de herramienta; alcance horizontal 750 girado 135°.
 
-### 10.3 Estado guardado `Inicio`
+### 10.3 Estado guardado (`Inicio_01-11_v2`)
 
-*Simulación → ˅ bajo Restablecer → Guardar estado actual*: `Pallet_Project` incluido entero (✓, no ■), con valores de propiedad, señales de E/S (objetos y controlador), valores de eje, visibilidad y posición/orientación/conexión; sin comportamiento físico ni valores de variable (al *Reproducir*, el PP vuelve a `Main` y las VAR a su valor inicial). Se guarda dentro de la estación (Ctrl+S). Cada prueba: **Parar → ˅ Restablecer → `Inicio` → Reproducir**.
+*Simulación → ˅ bajo Restablecer → Guardar estado actual*: `Pallet_Project` incluido entero, con valores de propiedad, señales de E/S (objetos y controlador), valores de eje, visibilidad y posición/orientación/conexión; sin comportamiento físico ni valores de variable (al *Reproducir*, el PP vuelve a `Main` y las VAR a su valor inicial). Al quitar esas dos opciones, la casilla **Incluir** sale como ■ (cuadrado) y no como ✓: es lo correcto. Se guarda dentro de la estación (Ctrl+S). Cada prueba: **Parar → ˅ Restablecer → `Inicio_01-11_v2` → Reproducir**. `Inicio` (30 oct) e `Inicio_01-11` están obsoletos: no cargarlos (ver 10.5).
 
 ### 10.4 Errores encontrados (para no repetirlos)
 
@@ -252,6 +252,35 @@ TCP de `toolVacuum` en Home (0, 0, 0, 0, 90, 0): (−530,33, 530,33, 946,5), RX 
 - Con el estado `Inicio` guardado (salida del NOT ya a 1), el NOT ya no daba flanco al arrancar y no salía la primera caja: de ahí `SimulationEvents`.
 - Aviso 50024 *Fallo de trayectoria de esquina*: el último `MoveL` de `ApproachPoint` acaba en `z10` y `Main` se queda esperando caja; el robot para en el punto. No es un error; se quita con `fine` en la subida si molesta en el vídeo.
 
+### 10.5 `SC_Conveyor2` (cinta 2, 1 nov)
+
+Mismo montaje que la cinta 1 (10.1). Probado el 1 nov con `Inicio_01-11_v2`: sale una sola caja en cada cinta, la caja 2 se para al final de la cinta y `Cup21` baja sobre su centro. La caja 2 todavía no se engancha (ver sección 11), así que se queda en la cinta y no sale la siguiente.
+
+| Componente | Configuración | Para qué |
+|---|---|---|
+| `Box2` (plantilla, en Componentes) | Caja 130 × 130 × 200. Origen local movido al centro; pieza en (−353,5, 3575, 868), `Cuerpo` en (−418,5, 3510, 768) | Lo que copia el `Source` |
+| `Source` | `Source` = `Box2`, `Position` (−353,5, 3575, 868), `Transient` ✓, `PhysicsBehavior` `Unchanged`. Y 3575 = fin de la cinta 3660 − 65 de media caja − 20 de margen | Crea cada caja |
+| `Queue` | Nada manual | Lista de cajas que mueve el `LinearMover` |
+| `LinearMover` | `Object` = `Queue (SC_Conveyor2)`, `Direction` (0, −1, 0), `Speed` 250, `Reference` Global, `Execute` ✓ | Mueve las cajas hacia el robot |
+| `PlaneSensor` | `Origin` (−503,5, 675, 788), `Axis1` (300, 0, 0), `Axis2` (0, 0, 150), `Active` ✓ | Barrera al final de la cinta |
+| `LogicGate` | `NOT`, `Delay` 0 | Al llevarse el robot la caja, pide la siguiente |
+| `SimulationEvents` | Nada manual | Primera caja al pulsar *Reproducir* |
+| Señal `BoxArrived` | DigitalOutput | Salida del componente hacia el controlador |
+
+Enlazamiento: `Source.Copy` → `Queue.Back`. Conexiones: `Source.Executed` → `Queue.Enqueue`; `PlaneSensor.SensorOut` → `Queue.Dequeue`, → `SC_Conveyor2.BoxArrived` y → `LogicGate.InputA`; `LogicGate.Output` → `Source.Execute`; `SimulationEvents.SimulationStarted` → `Source.Execute`. Lógica de estación: `SC_Conveyor2.BoxArrived` → `DI_Box2Arrived`.
+
+Con la caja parada, su centro queda en (−353,5, ≈734,5): es la posición de `Cup21` calculada con `PickConveyor2` y `wobjConveyor2`.
+
+Errores encontrados el 1 nov:
+
+- **Cajas dobles («se dividen en dos» al llegar al sensor):** al parar la simulación, el sensor se queda en 1 y el NOT en 0. Al reproducir sin cargar el estado, el NOT pasa de 0 a 1 y `SimulationEvents` también dispara: salen dos copias superpuestas. La `Queue` saca solo una al llegar al sensor y la otra sigue de largo. Por eso hay que cargar el estado guardado antes de cada prueba.
+- **Guardar el estado con el NOT en 1:** antes de guardar, comprobar `LogicGate.Output` = 1 (`Componer` → clic derecho en `LogicGate [NOT]` → *Propiedades*; no sale en el panel *Diseño*). Si está a 0, poner `PlaneSensor.Active` a 0 y otra vez a 1, y borrar la copia que aparece.
+- **Mover siempre la pieza, no `Cuerpo`:** el título del cuadro lo indica: *Definir posición: Box2* mueve la pieza y *Definir posición: (Body) - Box2* el cuerpo. Se aplicó (−353,5, 3575, 868) a `Cuerpo` y la caja quedó flotando 100 mm. La altura de la base se lee en `Cuerpo` (Z 768); la pieza va en Z 868.
+- **Copias reales al montar:** conectar el NOT activó el `Source` fuera de la simulación y creó `Box2_2`. Hay que borrar esas copias (`Transient` no las borra).
+- **`Box1_1`** era una copia sobrante del mismo tipo y estaba en el europalé; se borró. La plantilla de la cinta 1 es `Box1`.
+- **Cargar un estado antiguo devuelve `Box2` a su valor de entonces:** con el `Inicio` del 30 oct, `Box2` marcó (0, 0, 0). Se arregló volviendo a aplicar la posición, sin rehacer el origen local (`Cuerpo` volvió a marcar bien).
+- **Casilla `Incluir` al guardar:** sale ■, no ✓ (ver 10.3).
+
 ## 11. Pendiente
 
 Código:
@@ -261,8 +290,7 @@ Código:
 - Ordenar carpetas: `PalletProgram_29-10` es la versión buena; decidir qué hacer con `PalletProgram_28-10` y `PalletProgramV1`.
 
 Simulación:
-- Cinta 1 y caja 1 hechas (10.1, 10.2). Falta:
-  - **Cinta 2** (`SC_Conveyor2` con `Box2`, igual que la cinta 1). `Box2` probablemente tiene el mismo problema de origen local que `Box1`.
+- Cinta 1, caja 1 y cinta 2 hechas (10.1, 10.2, 10.5). Falta:
   - **Caja 2 en la ventosa:** se coge con la copa de esquina Cup21 (−160, −100), y el `LineSensor_2` está en el centro: hace falta un segundo sensor bajo Cup21 (misma señal `DO_Cup21`).
   - **Bloque 3×2:** un `Attacher` engancha una sola pieza y el bloque son 6 cajas. Decidir cómo (varios sensores, `SenseMultiple`, o agrupar las cajas).
   - **Liners:** coger el de arriba de la pila.
