@@ -6,6 +6,8 @@ Autores: Peru Mendivil y Joaquín Moreno (Group 2, JMPM). Repo: github.com/joaqu
 
 Vídeo de la simulación de la caja 2 (29 oct, 9:30 min, medio palé completo con los dos liners): `RobotStudio 10-29 v3 comprimido.mp4`. Los vídeos originales sin comprimir están en `.gitignore` (el v3 original pesa 126 MB, más que el límite de GitHub).
 
+Vídeo de la simulación con smart components (1 nov, 6:51 min): `RobotStudio 11-01 comprimido.mp4`. Llega hasta el europalé lleno y la capa 1 del medio palé con su liner, no hasta el medio palé lleno. El original de 146 MB está fuera del repo.
+
 ## 1. Robot y herramienta
 
 | Elemento | Valor | Motivo |
@@ -28,7 +30,7 @@ Vídeo de la simulación de la caja 2 (29 oct, 9:30 min, medio palé completo co
 | Cinta 2 (`ConveyorBox2`) | Entra desde +Y, eje x ≈ −350, fin y ≈ 650 | Caja 2 |
 | Mesa (`StackingTable`) | 500×600×770, x −1100…−600, y 0…600 | Junto a la cinta 2: el tramo cinta 2 → mesa (72 veces por palé) es el más corto |
 | Soporte liners (`LinerStand`) | 800×540×500, x −1300…−500, y −700…−160 | Bajo, para que los bloques pasen por encima sin subir |
-| Pila liners (`LinerStack`) | 10 liners, z 500…600 | Reposición desde fuera de la valla |
+| Pila liners (`Liner_01`…`Liner_10`) | 10 piezas de 800×540×10, x −1300…−500, y −700…−160, z 500…600 | Sustituyen a `LinerStack` (1 nov), para coger un liner cada vez. Reposición desde fuera de la valla |
 
 Palés y liners en el perímetro: se cambian sin entrar en la célula.
 
@@ -108,7 +110,7 @@ Refinado el 29 oct por la tarde (todo probado en simulación: caja 1, caja 2, al
 - Identificadores de estación: `StationConveyor1`, `StationConveyor2`, `StationTable`, `StationLinerStand`, `StationHalfPallet`, `StationEuroPallet` (= 1…6); parámetro `station` en `ApproachHeight`.
 - Z de la capa calculada una vez: `layerZ` local en `ProcessBox1`; en la caja 2, `FUNC num HalfPalletLayerZ()` = `(box2Layer-1)*(Box2Height+LinerHeight)` (un liner bajo cada capa salvo la 1.ª). Se quitó `linersPlaced` (siempre valía `box2Layer-1`).
 - Offsets con nombre: `EuroRow4Offset` 250, `EuroRow2Offset` 500, `Box2Offset` 130, `BlockOffsetX` = 3·130, `BlockOffsetY` = 2·130.
-- Orden de llenado de la mesa: Y ascendente (fila y=0 primero) y X descendente (260 → 130 → 0). Con la copa de esquina la ventosa sobresale hacia −X y +Y del wobj de la mesa (`PlaceTable` girado 180° en Y), así sobresale siempre sobre huecos vacíos; con el orden anterior (y=130 primero) quedaba sobre la primera fila.
+- Orden de llenado de la mesa (cambiado el 1 nov): fila lejana de la cinta primero (y=130, luego y=0) y X descendente (260 → 130 → 0). La caja viaja con la base a 900 y las puestas tienen el techo a 970; con la fila cercana primero, la caja atravesaba esa fila unos 70 mm. Coste: al dejar las 3 últimas, las copas de la fila contraria quedan 20 mm sobre el borde de la otra fila, a la misma altura (se tocan, no entran).
 - Pila de liners vacía (9.3).
 
 Hecho el 29 oct (detalles en 9.1 y 9.2):
@@ -203,7 +205,7 @@ Simulación de la caja 2 (vídeo v3): sin colisiones salvo con `LinerStack` al c
 
 ## 10. Smart components (30 oct y 1 nov)
 
-Vídeo de la prueba de la cinta 1 con smart components: `RobotStudio 10-30_6.mp4`. El Pack and Go `Pallet_Project.rspag` del repo es del 30 oct: tiene la cinta 1 y la ventosa, pero **no la cinta 2 ni el estado `Inicio_01-11_v2` del 1 nov** (esos están en la estación local, guardada con Ctrl+S, hasta hacer otro Pack and Go). El de `Descargas` del 26 oct es anterior. El código RAPID no cambió: los smart components solo sustituyen las señales que antes se activaban a mano.
+Vídeo de la prueba de la cinta 1 con smart components: `RobotStudio 10-30_6.mp4`. El Pack and Go `Pallet_Project.rspag` del repo es del 1 nov e incluye las dos cintas, la ventosa con sus 6 sensores, los 10 liners y el estado `Inicio_01-11_v8`. El de `Descargas` del 26 oct es anterior. El código RAPID no cambió: los smart components solo sustituyen las señales que antes se activaban a mano.
 
 ### 10.1 `SC_Conveyor1` (cinta 1)
 
@@ -213,7 +215,7 @@ Vídeo de la prueba de la cinta 1 con smart components: `RobotStudio 10-30_6.mp4
 | `Source` | `Source` = `Box1`, `Position` (338,5, 3390, 868), `Transient` ✓ | Crea cada caja. `Position` es respecto al padre (la estación), no a la plantilla |
 | `Queue` | Nada manual | Lista de cajas que mueve el `LinearMover` |
 | `LinearMover` | `Object` = `Queue`, `Direction` (0, −1, 0), `Speed` 250, `Reference` Global, `Execute` ✓ | Mueve las cajas hacia el robot |
-| `PlaneSensor` | `Origin` (188,5, 675, 788), `Axis1` (300, 0, 0), `Axis2` (0, 0, 150), `Active` ✓ | Plano vertical en el fin de la cinta (cara delantera de la caja en Y 670), de z 788 (20 sobre los rodillos) a 938 (por debajo del techo 968, para no detectar la ventosa) |
+| `PlaneSensor` | `Origin` (188,5, 675, 788), `Axis1` (300, 0, 0), `Axis2` (0, 0, 40), `Active` ✓ | Plano vertical en el fin de la cinta (cara delantera de la caja en Y 670). `Origin` es una esquina y cada `Axis` un lado entero: x 188,5…488,5 (centrado en la cinta) y z 788…828 (lo bastante bajo para no detectar el robot, ver 10.4) |
 | `LogicGate` | `NOT` | Al llevarse el robot la caja (sensor 1 → 0), pide la siguiente |
 | `SimulationEvents` | Nada manual | Primera caja al pulsar *Reproducir*. Sale una sola si antes se carga el estado guardado; si no, salen dos (ver 10.5) |
 | Señal `BoxArrived` | DigitalOutput | Salida del componente hacia el controlador |
@@ -226,27 +228,43 @@ Comprobado: la caja centrada en el fin de la cinta tiene el techo en (338,5, 919
 
 | Componente | Configuración | Para qué |
 |---|---|---|
-| `LineSensor_2` | `Start` (−530,33, 530,33, 956,5), `End` (−530,33, 530,33, 924,5) con el robot en Home; conectado a `PalletizingVacuumTool/PalletizingVacuumTool` (sin actualizar posición) | Línea en el TCP de `toolVacuum`, de 10 mm por encima a 22 mm por debajo del plano de las copas |
-| `Attacher` | `Parent` = `PalletizingVacuumTool/PalletizingVacuumTool`, `Mount` sin marcar | Engancha la pieza que detecta el sensor |
+| `LS_Cup21` (antes `LineSensor_2`) | `Start` (−597,51, 689,43, 956,5), `End` (−597,51, 689,43, 924,5) con el robot en Home, `Radius` 3,31; conectado a `PalletizingVacuumTool/PalletizingVacuumTool` (sin actualizar posición) | Línea en (−160, −65) del `toolVacuum`: al lado de `Cup21`, 35 mm hacia el centro de la ventosa, de 10 mm por encima a 22 mm por debajo del plano de las copas. Cae sobre la caja 1 y la caja 2 |
+| `Attacher` | `Parent` = mecanismo `PalletizingVacuumTool` (la lista no ofrece el eslabón), `Flange` = `toolVacuum` (única opción, no se puede dejar vacío), `Mount` sin marcar | Engancha la pieza que detecta el sensor |
 | `Detacher` | `KeepPosition` ✓ | La suelta donde está |
 | `LogicGate` | `NOT` | `Grip` 1 → 0 activa el `Detacher` |
 | Señal `Grip` | DigitalInput | Entrada desde el controlador |
 
-Enlazamientos: `LineSensor_2.SensedPart` → `Attacher.Child`; `Attacher.Child` → `Detacher.Child`. Conexiones: `Grip` → `Attacher.Execute` y → `LogicGate.InputA`; `LogicGate.Output` → `Detacher.Execute`. Lógica de estación: `DO_Cup21` → `SC_Gripper.Grip`. `DO_Cup21` es la única copa activa en todas las recogidas (`CupsAllOn` y `CupsBox2On`) y a 0 en todas las dejadas.
+Enlazamientos: `LS_Cup21.SensedPart` → `Attacher.Child`; `Attacher.Child` → `Detacher.Child`. Conexiones: `Grip` → `Attacher.Execute` y → `LogicGate.InputA`; `LogicGate.Output` → `Detacher.Execute`. Lógica de estación: `DO_Cup21` → `SC_Gripper.Grip`. `DO_Cup21` es la única copa activa en todas las recogidas (`CupsAllOn` y `CupsBox2On`) y a 0 en todas las dejadas.
+
+Sensores del bloque 3×2 (1 nov), uno por copa, cada uno sobre una caja distinta del bloque. `Length` 32, `Radius` 3,31, `Active` 1, Z de 956,5 a 924,5 con el robot en Home, conectados a la herramienta sin actualizar posición. Con una caja 1 en el aire, los 6 sensores marcan la caja (comprobado el 1 nov):
+
+| Sensor | Posición en `toolVacuum` | X, Y en Home |
+|---|---|---|
+| `LS_Cup11` | (−160, +65) | −689,43, 597,51 |
+| `LS_Cup12` | (0, +65) | −576,29, 484,37 |
+| `LS_Cup13` | (+160, +65) | −463,15, 371,23 |
+| `LS_Cup21` | (−160, −65) | −597,51, 689,43 |
+| `LS_Cup22` | (0, −65) | −484,37, 576,29 |
+| `LS_Cup23` | (+160, −65) | −371,23, 463,15 |
+
+Cada uno tiene su `Attacher_CupXX` (`Parent` y `Flange` como el `Attacher`, `Mount` sin marcar) y su `Detacher_CupXX` (`KeepPosition` ✓). Enlazamientos: `LS_CupXX.SensedPart` → `Attacher_CupXX.Child`; `Attacher_CupXX.Child` → `Detacher_CupXX.Child`. Conexiones: `Grip` → `Attacher_CupXX.Execute`; `LogicGate [NOT].Output` → `Detacher_CupXX.Execute`. Todos usan la misma señal `Grip`: al coger la caja 2 solo `LS_Cup21` tiene algo debajo, así que no hace falta una señal por copa.
 
 TCP de `toolVacuum` en Home (0, 0, 0, 0, 90, 0): (−530,33, 530,33, 946,5), RX −180 (herramienta vertical). Comprobado con la geometría del IRB 1600-1.45: brida en Z 1121,5 − 175 de herramienta; alcance horizontal 750 girado 135°.
 
 ### 10.3 Estado guardado (`Inicio_01-11_v2`)
 
-*Simulación → ˅ bajo Restablecer → Guardar estado actual*: `Pallet_Project` incluido entero, con valores de propiedad, señales de E/S (objetos y controlador), valores de eje, visibilidad y posición/orientación/conexión; sin comportamiento físico ni valores de variable (al *Reproducir*, el PP vuelve a `Main` y las VAR a su valor inicial). Al quitar esas dos opciones, la casilla **Incluir** sale como ■ (cuadrado) y no como ✓: es lo correcto. Se guarda dentro de la estación (Ctrl+S). Cada prueba: **Parar → ˅ Restablecer → `Inicio_01-11_v2` → Reproducir**. `Inicio` (30 oct) e `Inicio_01-11` están obsoletos: no cargarlos (ver 10.5).
+*Simulación → ˅ bajo Restablecer → Guardar estado actual*: `Pallet_Project` incluido entero, con valores de propiedad, señales de E/S (objetos y controlador), valores de eje, visibilidad y posición/orientación/conexión; sin comportamiento físico ni valores de variable (al *Reproducir*, el PP vuelve a `Main` y las VAR a su valor inicial). Al quitar esas dos opciones, la casilla **Incluir** sale como ■ (cuadrado) y no como ✓: es lo correcto. Se guarda dentro de la estación (Ctrl+S). Cada prueba: **Parar → ˅ Restablecer → `Inicio_01-11_v8` → Reproducir**. `Inicio_01-11_v8` es el estado vigente (ventosa completa, 10 liners y plano de las cintas bajado). `Inicio` (30 oct), `Inicio_01-11` y `Inicio_01-11_v2` a `_v7` están obsoletos: no cargarlos, porque guardan las propiedades y devuelven el sensor a su posición antigua (ver 10.5).
 
 ### 10.4 Errores encontrados (para no repetirlos)
 
 - `Box1` tenía el origen de la pieza en el origen del mundo y la geometría desplazada dentro (`Cuerpo` con origen en una esquina, (214, 670, 768)): *Establecer posición* daba 0. Se arregló con *Establecer origen local*.
 - `Execute` del `Source` fuera de la simulación crea una pieza normal que se queda en la estación (`Transient` solo borra las creadas durante la simulación). Las copias temporales no salen en el árbol.
 - `PlaneSensor` con un 100 por defecto en la Y de `Axis2`: plano inclinado y la caja se paraba antes del fin de la cinta.
-- `LineSensor`: `Start`, `End` y `Length` se recalculan entre sí. Escribir primero `Length` y después `Start` y `End`; el valor está guardado cuando `Length` cuadra y no lleva `~`.
+- `LineSensor`: `Start`, `End` y `Length` se recalculan entre sí. Lo importante para que no se estropeen los valores es escribir los decimales con coma (`,`) y no con punto (`.`); no hace falta escribir `Length` primero. El valor está guardado cuando `Length` cuadra y no lleva `~`.
 - `LineSensor` solo detecta cuando la línea **cruza una cara** de la pieza: empezando 2 mm bajo las copas, la línea quedaba entera dentro de la caja y no detectaba nada. Por eso empieza 10 mm por encima.
+- `LineSensor` justo bajo `Cup21` (1 nov): la línea empieza 10 mm por encima de los labios, dentro de la copa, y `SensedPart` marcaba `PalletizingVacuumTool` (confirmado en pausa). A veces no enganchaba y a veces no soltaba. Se apartó 35 mm hacia el centro de la ventosa (25 de radio de copa + 3,31 de radio del sensor). Bajar la Z no sirve: la línea debe empezar por encima del techo de la caja, que al coger coincide con los labios. Que el fallo fuera intermitente sigue sin explicar.
+- **Caja parada a mitad de la cinta 1 (1 nov):** con el plano hasta z 938, el robot lo cruzaba al ir del europalé a la cinta 2. La señal sacaba de la `Queue` a la caja que venía de camino, y al salir del plano el `NOT` creaba otra, que atravesaba a la parada. Se vio en el vídeo hacia el segundo 84. Se arregló bajando el techo del plano a 828 en las dos cintas y Peru comprobó que ya no pasa.
+- *Parar* detiene la simulación, no la tarea RAPID: el módulo sigue `[sólo lectura]` y sale *La tarea está en el estado de funcionamiento*. Para editar: pestaña `RAPID` → grupo `Probar y depurar` → **Detener**.
 - Conectar el `SC_Gripper` a la herramienta no arrastra su sensor: hay que conectar el propio `LineSensor` a `PalletizingVacuumTool/PalletizingVacuumTool`.
 - `Attacher.Parent` se había quedado en `Detacher (SC_Gripper)`.
 - Con el estado `Inicio` guardado (salida del NOT ya a 1), el NOT ya no daba flanco al arrancar y no salía la primera caja: de ahí `SimulationEvents`.
@@ -262,7 +280,7 @@ Mismo montaje que la cinta 1 (10.1). Probado el 1 nov con `Inicio_01-11_v2`: sal
 | `Source` | `Source` = `Box2`, `Position` (−353,5, 3575, 868), `Transient` ✓, `PhysicsBehavior` `Unchanged`. Y 3575 = fin de la cinta 3660 − 65 de media caja − 20 de margen | Crea cada caja |
 | `Queue` | Nada manual | Lista de cajas que mueve el `LinearMover` |
 | `LinearMover` | `Object` = `Queue (SC_Conveyor2)`, `Direction` (0, −1, 0), `Speed` 250, `Reference` Global, `Execute` ✓ | Mueve las cajas hacia el robot |
-| `PlaneSensor` | `Origin` (−503,5, 675, 788), `Axis1` (300, 0, 0), `Axis2` (0, 0, 150), `Active` ✓ | Barrera al final de la cinta |
+| `PlaneSensor` | `Origin` (−503,5, 675, 788), `Axis1` (300, 0, 0), `Axis2` (0, 0, 40), `Active` ✓ | Barrera al final de la cinta, de z 788 a 828 |
 | `LogicGate` | `NOT`, `Delay` 0 | Al llevarse el robot la caja, pide la siguiente |
 | `SimulationEvents` | Nada manual | Primera caja al pulsar *Reproducir* |
 | Señal `BoxArrived` | DigitalOutput | Salida del componente hacia el controlador |
@@ -284,19 +302,15 @@ Errores encontrados el 1 nov:
 ## 11. Pendiente
 
 Código:
-- **Mesa:** con el TCP a 1100, la caja 2 que lleva el robot tiene la base a 900 y las cajas ya puestas el techo a 970. Al llegar a un hueco puede chocar con las vecinas (no se ve en la simulación porque las cajas no van enganchadas). El orden de llenado nuevo ya evita que la ventosa quede sobre cajas puestas; falta comprobar el tránsito con las cajas enganchadas. Si choca: bajar la mesa o subir el tránsito (a +300 ya no llegaba).
 - `cupsState`: se escribe en `VacuumControl` pero no se lee. Quitarlo o usarlo para el extra de presión.
 - Mensajes al FlexPendant (pila vacía, palé lleno) y `DEFAULT` de `ApproachHeight`: al final.
 - Ordenar carpetas: `PalletProgram_29-10` es la versión buena; decidir qué hacer con `PalletProgram_28-10` y `PalletProgramV1`.
 
 Simulación:
-- Cinta 1, caja 1 y cinta 2 hechas (10.1, 10.2, 10.5). Falta:
-  - **Caja 2 en la ventosa:** se coge con la copa de esquina Cup21 (−160, −100), y el `LineSensor_2` está en el centro: hace falta un segundo sensor bajo Cup21 (misma señal `DO_Cup21`).
-  - **Bloque 3×2:** un `Attacher` engancha una sola pieza y el bloque son 6 cajas. Decidir cómo (varios sensores, `SenseMultiple`, o agrupar las cajas).
-  - **Liners:** coger el de arriba de la pila.
-  - Comprobar el choque de la mesa (pendiente de código) con las cajas enganchadas.
+- Cinta 1, caja 1, cinta 2, caja 2 en la ventosa, bloque 3×2 y liners hechos y probados el 1 nov (10.1, 10.2, 10.5). El código de los liners no cambió: `PickLiner` ya bajaba 10 mm por liner. Ciclo completo hasta llenar los dos palés probado por Peru el 1 nov: todo bien. Falta:
+  - **Cambio de palé en simulación:** las cajas puestas se quedan en el palé. Al activar `DI_EuroPalletReplaced` o `DI_HalfPalletReplaced`, las nuevas se pondrían sobre ellas. Tampoco reaparecen los liners con `DI_LinersRefilled`.
 - Las cajas van ya enganchadas en la cinta 1: así se ven en la presentación y la detección de colisiones comprueba también la carga.
-- Conjunto de colisión: A = robot + herramienta; B = cintas, mesa, soporte y pila de liners, palés (las cajas no, porque se tocan a propósito). Casi colisión a 50 mm.
+- Conjunto de colisión: A = robot + herramienta; B = cintas, mesa, soporte y palés (las cajas y los liners no, porque se tocan a propósito). Casi colisión a 50 mm.
 - Grabar el vídeo final con la cámara más alejada (en la mesa la ventosa se sale del encuadre).
 
 Resto:
@@ -307,7 +321,7 @@ Resto:
 
 ## 12. Notas para la defensa
 
-- **Caja 2 con una sola copa:** la caja (130×130) es menor que el patrón de copas. Se coge con la copa de esquina (−160, −100) y válvula por copa; con la central, las copas laterales pisarían cajas vecinas en la mesa. La mesa se llena por filas en Y ascendente y, en cada fila, X descendente. Herramienta estándar de ElegantTools (el enunciado permite otra si se justifica).
+- **Caja 2 con una sola copa:** la caja (130×130) es menor que el patrón de copas. Se coge con la copa de esquina (−160, −100) y válvula por copa; con la central, las copas laterales pisarían cajas vecinas en la mesa. La mesa se llena desde la fila lejana de la cinta y, en cada fila, en X descendente: la caja transportada no pasa sobre las ya puestas. Herramienta estándar de ElegantTools (el enunciado permite otra si se justifica).
 - **Giro de la base 135°:** para que el eje 1 no cruce su límite en la cadena caja 2.
 - **`wobj0`** coincide con el mundo, no con la base del robot.
 - **`GripLoad`:** tras el vacío; carga correspondiente al coger, `load0` al dejar.
@@ -317,5 +331,4 @@ Resto:
 - **FUNC vs PROC:** `Box1Ready()` / `Box2Ready()` son FUNC porque devuelven un bool que se evalúa en el momento de la llamada.
 - **`MoveJ` en el tránsito, `MoveL` solo en vertical:** el `MoveL` entre estaciones lejanas pasa cerca de la base (singularidades, ejes al límite); el `MoveJ` hace un arco, y lo que se comprueba es que no baje sobre nada (rastreo de TCP + conjunto de colisión).
 - **Alturas de aproximación:** una FUNC con una fórmula por estación, para que la regla esté en un solo sitio. Plano de 1100 en cintas y mesa, de 850 en los palés (pasar sobre los liners con el bloque) y mínimo de 250 sobre el target (no chocar con las vecinas de la capa).
-- **Colisión con `LinerStack` al coger el 2.º liner:** el modelo de la pila es fijo; en la realidad ese liner ya no estaría.
 - Seguridad: cortinas de luz en los huecos de los palés, puerta enclavada, paradas de emergencia; reposición de liners y túnel de las cintas en el Excel de riesgos.

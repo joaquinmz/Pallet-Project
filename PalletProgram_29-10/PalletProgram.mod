@@ -277,25 +277,25 @@ MODULE PalletProgram
 
         ApproachPoint PickConveyor2,wobjConveyor2,CupsBox2On,loadBox2,ApproachHeight(StationConveyor2);
 
-        ! Row y=0 first and x from high to low: the gripper is never over the boxes already placed
+        ! Far row (y=130) first and x from high to low: the box carried never crosses the boxes already placed
         TEST box2State
         CASE Box2Pos1:
-            ApproachPoint Offs(PlaceTable,2*Box2Offset,0,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
+            ApproachPoint Offs(PlaceTable,2*Box2Offset,Box2Offset,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
             box2State:=Box2Pos2;
         CASE Box2Pos2:
-            ApproachPoint Offs(PlaceTable,Box2Offset,0,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
+            ApproachPoint Offs(PlaceTable,Box2Offset,Box2Offset,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
             box2State:=Box2Pos3;
         CASE Box2Pos3:
-            ApproachPoint Offs(PlaceTable,0,0,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
+            ApproachPoint Offs(PlaceTable,0,Box2Offset,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
             box2State:=Box2Pos4;
         CASE Box2Pos4:
-            ApproachPoint Offs(PlaceTable,2*Box2Offset,Box2Offset,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
+            ApproachPoint Offs(PlaceTable,2*Box2Offset,0,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
             box2State:=Box2Pos5;
         CASE Box2Pos5:
-            ApproachPoint Offs(PlaceTable,Box2Offset,Box2Offset,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
+            ApproachPoint Offs(PlaceTable,Box2Offset,0,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
             box2State:=Box2LastPos;
         CASE Box2LastPos:
-            ApproachPoint Offs(PlaceTable,0,Box2Offset,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
+            ApproachPoint Offs(PlaceTable,0,0,0),wobjTable,CupsAllOff,load0,ApproachHeight(StationTable);
             IF halfPalletFull OR linerMissing THEN
                 tableFull:=TRUE;
             ELSE
