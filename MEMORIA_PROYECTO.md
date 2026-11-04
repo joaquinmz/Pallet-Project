@@ -313,6 +313,10 @@ Errores encontrados el 1 nov:
 Código:
 - `cupsState`: se escribe en `VacuumControl` pero no se lee. Quitarlo o usarlo para el extra de presión.
 - Mensajes al FlexPendant (pila vacía, palé lleno) y `DEFAULT` de `ApproachHeight`: al final.
+- **Retocar `CalibData.mod`** (apuntado el 4 nov):
+  - **Comentarios:** falta uno por cada `wobj` (dónde está su origen y hacia dónde van sus ejes). Las cabeceras de sección mezclan tabuladores y espacios. El comentario de `loadBox2` dice que la mesa se llena "rows ascending Y, each row descending X", pero desde el 1 nov se llena primero la fila lejana (y = 130), es decir, Y descendente (ver el comentario de `ProcessBox2`).
+  - **Masas e inercias:** `toolVacuum` sigue con 1 kg provisional, CdG (0, 0, 1) e inercias 0. Todas las `loaddata` (`loadBox1` 2 kg, `loadBox2` 0,4 kg, `loadBox2Stack` 2,4 kg, `loadLiner` 0,52 kg) tienen las inercias a 0 (masa puntual). Calcularlas (caja maciza: Ix = m(b²+c²)/12, etc.) o justificar el 0, y confirmar las masas (correo a My Legendi).
+  - **CdG:** comprobar que el de `loadBox2Stack` (0, 0, 100) está bien respecto al TCP con el que se coge el bloque en `PickTableStack`.
 - Ordenar carpetas: `PalletProgram_29-10` es la versión buena; decidir qué hacer con `PalletProgram_28-10` y `PalletProgramV1`.
 
 Simulación:
