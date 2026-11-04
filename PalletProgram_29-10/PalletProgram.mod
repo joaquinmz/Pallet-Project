@@ -169,6 +169,7 @@ MODULE PalletProgram
 
         InitSignals;
         VacuumControl CupsAllOff;
+        SetDO DO_EuroPalletFull,0;
         GripLoad load0;
         MoveAbsJ Home,v100,fine,toolVacuum;
 
@@ -212,6 +213,7 @@ MODULE PalletProgram
                 ! Not necessary but safe
                 box1State:=Box1Pos1;
                 euroPalletFull:=FALSE;
+                SetDO DO_EuroPalletFull,0;
             ENDIF
             WaitTime 0.1;
         ENDWHILE
@@ -260,6 +262,7 @@ MODULE PalletProgram
             ApproachPoint Offs(PlaceEuroRow2,EuroRow2Offset,0,layerZ),wobjEuroPallet,CupsAllOff,load0,ApproachHeight(StationEuroPallet);
             IF box1Layer=Box1MaxLayers THEN
                 euroPalletFull:=TRUE;
+                SetDO DO_EuroPalletFull,1;
             ELSE
                 Incr box1Layer;
             ENDIF
