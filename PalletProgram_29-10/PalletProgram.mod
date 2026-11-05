@@ -170,6 +170,8 @@ MODULE PalletProgram
         InitSignals;
         VacuumControl CupsAllOff;
         SetDO DO_EuroPalletFull,0;
+        SetDO DO_HalfPalletFull,0;
+        SetDO DO_LinerStackEmpty,0;
         GripLoad load0;
         MoveAbsJ Home,v100,fine,toolVacuum;
 
@@ -187,6 +189,7 @@ MODULE PalletProgram
                 box2Layer:=1;
                 blockState:=BlockPos1;
                 halfPalletFull:=FALSE;
+                SetDO DO_HalfPalletFull,0;
                 IF tableFull THEN
                     TransferStack;
                     tableFull:=FALSE;
@@ -197,6 +200,7 @@ MODULE PalletProgram
             IF linerStackEmpty AND DI_LinersRefilled=1 THEN
                 linersLeft:=TotalLiners;
                 linerStackEmpty:=FALSE;
+                SetDO DO_LinerStackEmpty,0;
                 IF linerMissing THEN
                     linerMissing:=FALSE;
                     PlaceLayerLiner;
@@ -337,6 +341,7 @@ MODULE PalletProgram
             ApproachPoint Offs(PlaceHalfPallet,BlockOffsetX,0,layerZ),wobjHalfPallet,CupsAllOff,load0,ApproachHeight(StationHalfPallet);
             IF box2Layer=Box2MaxLayers THEN
                 halfPalletFull:=TRUE;
+                SetDO DO_HalfPalletFull,1;
             ELSEIF linerStackEmpty THEN
                 linerMissing:=TRUE;
             ELSE
@@ -358,6 +363,7 @@ MODULE PalletProgram
         Decr linersLeft;
         IF linersLeft=0 THEN
             linerStackEmpty:=TRUE;
+            SetDO DO_LinerStackEmpty,1;
         ENDIF
     ENDPROC
 
