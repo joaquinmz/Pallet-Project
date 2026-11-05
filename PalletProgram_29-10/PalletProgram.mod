@@ -326,6 +326,7 @@ MODULE PalletProgram
             IF box1Layer=Box1MaxLayers THEN
                 euroPalletFull:=TRUE;
                 SetDO DO_EuroPalletFull,1;
+                TPWrite "Euro pallet full: replace it, then press the Euro pallet replaced button";
             ELSE
                 Incr box1Layer;
             ENDIF
@@ -401,6 +402,7 @@ MODULE PalletProgram
             IF box2Layer=Box2MaxLayers THEN
                 halfPalletFull:=TRUE;
                 SetDO DO_HalfPalletFull,1;
+                TPWrite "Half pallet full: replace it, then press the half pallet replaced button";
             ELSEIF linerStackEmpty THEN
                 linerMissing:=TRUE;
             ELSE
@@ -423,6 +425,7 @@ MODULE PalletProgram
         IF linersLeft=0 THEN
             linerStackEmpty:=TRUE;
             SetDO DO_LinerStackEmpty,1;
+            TPWrite "Liner stack empty: refill it, then press the liners refilled button";
         ENDIF
     ENDPROC
 
