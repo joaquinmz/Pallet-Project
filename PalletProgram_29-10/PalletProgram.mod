@@ -119,6 +119,10 @@ MODULE PalletProgram
     VAR num box1Layer:=1;
     VAR bool euroPalletFull:=FALSE;
 
+    ! Euro pallet replaced by the operator: interrupt and flag set by the TRAP
+    VAR intnum euroReplacedInt;
+    VAR bool euroPalletReplaced:=FALSE;
+
     !-----------------------------------------------------------------------
     ! Box 2 state machine parameters and variables (table)
     !-----------------------------------------------------------------------
@@ -172,6 +176,10 @@ MODULE PalletProgram
         SetDO DO_EuroPalletFull,0;
         SetDO DO_HalfPalletFull,0;
         SetDO DO_LinerStackEmpty,0;
+        ! Connect an interrupt to DI_EuroPalletReplaced: EuroPalletReplacedTrap runs on every rising edge
+        IDelete euroReplacedInt;
+        CONNECT euroReplacedInt WITH EuroPalletReplacedTrap;
+        ISignalDI DI_EuroPalletReplaced,1,euroReplacedInt;
         GripLoad load0;
         MoveAbsJ Home,v100,fine,toolVacuum;
 
@@ -211,17 +219,30 @@ MODULE PalletProgram
                 ENDIF
             ENDIF
 
-            ! Euro pallet replaced
-            IF euroPalletFull AND DI_EuroPalletReplaced=1 THEN
+            ! Euro pallet replaced (flag set by the TRAP): back to layer 1
+            IF euroPalletReplaced THEN
+                euroPalletReplaced:=FALSE;
                 box1Layer:=1;
                 ! Not necessary but safe
                 box1State:=Box1Pos1;
                 euroPalletFull:=FALSE;
-                SetDO DO_EuroPalletFull,0;
             ENDIF
             WaitTime 0.1;
         ENDWHILE
     ENDPROC
+
+    !-----------------------------------------------------------------------
+    ! Interrupts: the operator replaced a pallet
+    !-----------------------------------------------------------------------
+    TRAP EuroPalletReplacedTrap
+        ! Only considered if the pallet is already full to prevent false positives
+        IF euroPalletFull THEN
+            ! Light off at once, even while the robot moves: the operator instantly sees the press was accepted
+            SetDO DO_EuroPalletFull,0;
+            ! Main sets layer 1 when the robot is free (no motion in a TRAP)
+            euroPalletReplaced:=TRUE;
+        ENDIF
+    ENDTRAP
 
     !-----------------------------------------------------------------------
     ! Box ready to be handled
