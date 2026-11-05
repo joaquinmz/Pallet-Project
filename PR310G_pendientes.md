@@ -42,7 +42,7 @@ Documento vivo: lo que falta para aprobar y para sacar la A. Claude lo actualiza
 | 3 | Valla y equipos de seguridad en RobotStudio y en la presentación | ❌ | No hay valla en la estación. Safety HT25.pdf sigue bloqueado (T3, T6). |
 | 4 | Señales configuradas y usadas | ✅ | 15 señales: `DO_Cup11…23`, `DO_EuroPalletFull`, `DO_HalfPalletFull`, `DO_LinerStackEmpty`, `DI_Box1Arrived`, `DI_Box2Arrived`, `DI_EuroPalletReplaced`, `DI_HalfPalletReplaced`, `DI_LinersRefilled` y `AI_VacuumPressure` (todavía sin usar). |
 | 5 | Secuencia completa, cualquier orden y alternancia | ✅ con matiz | Lógica completa y probada con los dos palés y la reposición de liners. El "mensaje al operario" es ahora una luz (DO). Recomendado: añadir también un `TPWrite` para que no se discuta si una luz es un "message" (T1). |
-| 6 | Sin colisiones | 🟡 | Resuelto: los liners ya son copias, así que no hay colisión con `LinerStack`. Queda: (a) al dejar las 3 últimas cajas de la mesa, las copas de la otra fila quedan 20 mm sobre el borde de la fila ya puesta, a la misma altura (se tocan); (b) las cajas no están en el conjunto de colisión, así que caja contra caja no se comprueba; (c) casi colisiones esperadas con `LinerStand` al coger los 4 liners de abajo (T4). |
+| 6 | Sin colisiones | 🟡 | Resuelto: los liners ya son copias, así que no hay colisión con `LinerStack`. (a) Copas apoyadas 20 mm sobre la otra fila de la mesa y (b) cajas fuera del conjunto de colisión: decidido justificarlo (T4, falta confirmación de J); (c) casi colisiones esperadas con `LinerStand` al coger los 4 liners de abajo (T4). |
 | 7 | Instrucciones de movimiento | ✅ | Punto flojo: `z10` en todas partes sin nombre ni justificación (T16). |
 | 8 | ~1 s de vacío | ✅ | `WaitTime\InPos,VacuumTime`. |
 | 9 | Nombres, legibilidad, comentarios | ✅ con fallos | Siguen `Main` con lógica, números sueltos, `cupsState` sin uso y 9E+09 (T15–T18). En `CalibData` faltan comentarios por wobj, se mezclan tabuladores y espacios, y el comentario de `loadBox2` está desactualizado (T31). |
@@ -63,7 +63,7 @@ Documento vivo: lo que falta para aprobar y para sacar la A. Claude lo actualiza
 | Entregable | Estado | Qué falta |
 |---|---|---|
 | Documento con los extras elegidos | ❌ | T24. |
-| Pack and Go | 🟡 | El de `main` es del 4 nov y está **guardado con 25.2** (T7, T26). |
+| Pack and Go | 🟡 | El de `main` es del 5 nov (20:23, con las interrupciones y el `Repeater` de `SC_Conveyor1`) y sigue **guardado con 25.2** (T7, T26). |
 | Station Viewer con una secuencia completa | ❌ | T25 (preguntar qué es "secuencia completa", T6). |
 | Descripción de los equipos fuera de la célula | ❌ | T24. |
 | Excel de riesgos | ❌ | T2. |
@@ -81,7 +81,7 @@ Formato: **qué** · responsable · esfuerzo · depende de · cómo se comprueba
 ### Prioridad 0 – esta semana
 - [ ] **T6 Correo a My Legendi** · J · 20 min · preguntas de la sección 4. Si ya se ha enviado, apuntar la respuesta en el registro de decisiones.
 - [ ] **T7 Probar el Pack and Go en RobotStudio 2024.4** · J+P · 30 min · sigue guardado con 25.2 · abre, el controlador arranca y el ciclo corre. Ahora es aún más importante: hay muchos smart components y rehacerlos en la 2024.4 sería muy caro.
-- [ ] **T35 Subir el merge de `main`** · J · 5 min · el `main` local tiene el merge de `docs-joaquin` (`b08affb`) sin subir (`ahead 2`) · `git push` desde Windows; GitHub muestra `PR310G_pendientes.md` en `main`.
+- [x] **T35 Subir el merge de `main`** (hecho: `b08affb` está en `origin/main`, comprobado el 5 nov) · J · 5 min · el `main` local tiene el merge de `docs-joaquin` (`b08affb`) sin subir (`ahead 2`) · `git push` desde Windows; GitHub muestra `PR310G_pendientes.md` en `main`.
 
 ### Prioridad 1 – requisitos mínimos
 - [ ] **T2 Excel de riesgos** (req. 2) · **J** · 4–6 h · decisión de T3.
@@ -94,13 +94,14 @@ Formato: **qué** · responsable · esfuerzo · depende de · cómo se comprueba
   - Al terminar, añadir la valla al grupo B del conjunto de colisión.
   - Los pulsadores del operario (`EuroPalletReplaced`, `HalfPalletReplaced`, `LinersRefilled`) y las tres luces van **fuera** de la valla: dibujarlos o describirlos.
 - [ ] **T1 Mensaje al operario** (req. 5) · J · 20 min · *ya hay luces*. Añadir un `TPWrite` una sola vez junto a cada `SetDO ...,1` (europalé lleno, medio palé lleno, pila de liners vacía). Nada de `TPReadFK`.
-- [ ] **T4 Colisiones en la mesa** (req. 6) · J+P · 1 h · decidir y documentar:
-  - (a) Copas de la otra fila tocando 20 mm el borde de las cajas puestas. ¿Es aceptable (copas sin vacío apoyando sobre cartón) o se evita (por ejemplo, otro orden o un poco más de margen en la mesa)?
-  - (b) ¿Se meten las cajas puestas en el grupo B para comprobar caja contra caja, o se justifica por qué no?
-  - Respuesta preparada para la defensa.
+- [ ] **T4 Colisiones en la mesa** (req. 6) · J+P · 🟡 decidido por P el 5 nov, falta que lo confirme J:
+  - (a) **Se queda como está y se justifica.** Al dejar las 3 cajas de la fila cercana, tres copas sin vacío se apoyan 20 mm sobre el borde de la fila lejana, sin entrar; el robot solo baja y sube en vertical (no arrastra) y las copas de fuelle absorben tolerancias. Descartado: separar las filas (haría falta 160 mm y el bloque 3×2 ya no se coge entero), coger con `Cup11` (las copas libres irían sobre la cinta 2, a la altura de la caja que espera) y llenar primero la fila cercana (habría que subir el tránsito de la caja 2 unos 120 mm, ≈1 min más por medio palé).
+  - (b) **Las cajas no van en el conjunto de colisión** (se tocan a propósito: bloque 3×2, cajas pegadas en el palé, la ventosa toca la que coge; además son copias que crea el `Source` durante la simulación). Que la caja que se lleva no pase sobre las puestas lo asegura la trayectoria (fila lejana primero, X descendente; base a 900, techos a 970) y se enseña con el rastreo del TCP.
+  - La prueba puntual para enseñarlo (caja estática `Box2_Test` en la fila lejana y un 2.º conjunto de colisión) se hace en la T14.
 
 ### Prioridad 2 – extras para la A
 - [ ] **T14 Cerrar la detección de colisiones** (extra 3) · J+P · 1 h · T3 y T4.
+  - Prueba puntual de T4: copia estática de `Box2` (`Box2_Test`) en un hueco de la fila lejana de la mesa (elegir el que tenga como vecino la última caja que se deja), 2.º conjunto de colisión (A = herramienta, B = `Box2_Test`), reproducir hasta la 6.ª caja y pausar: debe salir solo el contacto de las copas al dejar la fila cercana. Borrar `Box2_Test` y el conjunto 2 **antes** de que el robot coja el bloque (los sensores de la ventosa la engancharían). Hace falta saber dónde está el origen de la pieza `Box2` para colocarla.
   - Valla en el grupo B.
   - Decidir el umbral de casi colisión. Hoy, 50 mm hace saltar avisos con `LinerStand` al coger los 4 liners de abajo, que son esperados. Bajar el umbral para ocultarlos puede parecer trampa; mejor explicarlo.
   - Grabar un ciclo con el panel de colisiones visible.

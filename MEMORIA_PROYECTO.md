@@ -416,6 +416,8 @@ Resto:
 ## 12. Notas para la defensa
 
 - **Caja 2 con una sola copa:** la caja (130×130) es menor que el patrón de copas. Se coge con la copa de esquina (−160, −100) y válvula por copa; con la central, las copas laterales pisarían cajas vecinas en la mesa. La mesa se llena desde la fila lejana de la cinta y, en cada fila, en X descendente: la caja transportada no pasa sobre las ya puestas. Herramienta estándar de ElegantTools (el enunciado permite otra si se justifica).
+- **Copas sobre la otra fila de la mesa (decidido el 5 nov, T4):** al dejar las 3 cajas de la fila cercana, tres copas sin vacío se apoyan 20 mm sobre el borde de la fila lejana, sin entrar. Se justifica: solo hay movimiento vertical en ese punto y las copas de fuelle absorben tolerancias. Separar las filas impediría coger el bloque 3×2 (harían falta 160 mm); coger con `Cup11` llevaría las copas libres sobre la cinta 2, a la altura de la caja que espera; llenar primero la fila cercana obliga a subir el tránsito de la caja 2 (≈1 min más por medio palé).
+- **Cajas fuera del conjunto de colisión (T4):** se tocan a propósito (bloque, palé, ventosa) y son copias del `Source` creadas durante la simulación. La caja transportada no pasa sobre las puestas por diseño de la trayectoria (fila lejana primero, X descendente), comprobable con el rastreo del TCP.
 - **Giro de la base 135°:** para que el eje 1 no cruce su límite en la cadena caja 2.
 - **`wobj0`** coincide con el mundo, no con la base del robot.
 - **`GripLoad`:** tras el vacío; carga correspondiente al coger, `load0` al dejar.
