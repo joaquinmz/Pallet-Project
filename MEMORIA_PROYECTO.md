@@ -413,6 +413,8 @@ Resto:
 - Correo a My Legendi: inercias, liner (masa/material), caja 2 con una copa, simulación de la señal analógica, alcance del Station Viewer.
 - Comprobar que el Pack and Go de RobotStudio 2025 abre en la 2024.4 de las salas.
 
+- **Siguiente paso (6 nov): juntar la celda de seguridad de Joaquín** (hecha sobre un `.rspag` más antiguo) con la estación actual. RobotStudio no fusiona estaciones, pero el `.rsstnx` de dentro del `.rspag` es XML y se pueden comparar. Plan en `PR310G_pendientes.md`, T37. El `Pallet_Project.rspag` de Descargas es una carpeta descomprimida del 26 oct, no es el de Joaquín.
+
 ## 12. Notas para la defensa
 
 - **Caja 2 con una sola copa:** la caja (130×130) es menor que el patrón de copas. Se coge con la copa de esquina (−160, −100) y válvula por copa; con la central, las copas laterales pisarían cajas vecinas en la mesa. La mesa se llena desde la fila lejana de la cinta y, en cada fila, en X descendente: la caja transportada no pasa sobre las ya puestas. Herramienta estándar de ElegantTools (el enunciado permite otra si se justifica).
