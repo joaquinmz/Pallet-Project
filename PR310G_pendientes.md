@@ -18,7 +18,7 @@ Documento vivo: lo que falta para aprobar y para sacar la A. Claude lo actualiza
 - **Ventosa con 6 sensores**, uno por copa (`LS_Cup11…23` con su `Attacher` y `Detacher`). Ya engancha la caja 1, la caja 2 y el bloque 3×2.
 - **Liners como copias de 10 `Source`** (`SC_Liners`) en lugar del modelo fijo `LinerStack`: desaparece la colisión del 2.º liner.
 - **Vaciado de palés en simulación:**
-  - Europalé: `Queue_EuroPallet` + `DeleteAll`.
+  - Europalé: `Queue_EuroPallet` (`Enqueue` en `Source.Executed`) + `Repeater` (`Count` 12) → `Delete` (5 nov; antes `DeleteAll`).
   - Medio palé: `Queue_HalfPallet` + `Repeater` (`Count` 72), y `Repeater_Liners` (`Count` 2) para los dos liners del palé.
   - El pulsador del operario está en cada smart component; un `AND` con la señal de "palé lleno" activa la DI del controlador.
 - **Reposición de liners** con `LinersRefilled` AND `LinerStackEmpty`, probada el 5 nov con 6 medios palés seguidos.
