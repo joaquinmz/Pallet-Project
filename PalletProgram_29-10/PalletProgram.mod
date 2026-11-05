@@ -29,6 +29,8 @@ MODULE PalletProgram
     ! from one base target per station. ApproachPoint does every
     ! pick/place: approach, vacuum on/off and GripLoad. Work objects,
     ! tool and loads are in the module CalibData.
+    ! The operator buttons (pallet replaced, liners refilled) are read
+    ! with interrupts (TRAP), so a short press is never lost.
     !
     ! Naming: VAR, PERS and parameters in camelCase (can change);
     ! CONST, PROC, FUNC and MODULE in PascalCase (fixed).
@@ -154,6 +156,10 @@ MODULE PalletProgram
     VAR num box2Layer:=1;
     VAR bool halfPalletFull:=FALSE;
 
+    ! Half pallet replaced by the operator: interrupt and flag set by the TRAP
+    VAR intnum halfReplacedInt;
+    VAR bool halfPalletReplaced:=FALSE;
+
     !-----------------------------------------------------------------------
     ! Liners parameters and variables
     !-----------------------------------------------------------------------
@@ -165,6 +171,10 @@ MODULE PalletProgram
     VAR bool linerStackEmpty:=FALSE;
     ! Layer complete but the liner stack is empty: box 2 waits for the refill
     VAR bool linerMissing:=FALSE;
+
+    ! Liners refilled by the operator: interrupt and flag set by the TRAP
+    VAR intnum linersRefilledInt;
+    VAR bool linersRefilled:=FALSE;
 
     !-----------------------------------------------------------------------
     ! Main: choose the box and check the operator signals
@@ -180,6 +190,14 @@ MODULE PalletProgram
         IDelete euroReplacedInt;
         CONNECT euroReplacedInt WITH EuroPalletReplacedTrap;
         ISignalDI DI_EuroPalletReplaced,1,euroReplacedInt;
+        ! Connect an interrupt to DI_HalfPalletReplaced: HalfPalletReplacedTrap runs on every rising edge
+        IDelete halfReplacedInt;
+        CONNECT halfReplacedInt WITH HalfPalletReplacedTrap;
+        ISignalDI DI_HalfPalletReplaced,1,halfReplacedInt;
+        ! Connect an interrupt to DI_LinersRefilled: LinersRefilledTrap runs on every rising edge
+        IDelete linersRefilledInt;
+        CONNECT linersRefilledInt WITH LinersRefilledTrap;
+        ISignalDI DI_LinersRefilled,1,linersRefilledInt;
         GripLoad load0;
         MoveAbsJ Home,v100,fine,toolVacuum;
 
@@ -192,23 +210,32 @@ MODULE PalletProgram
                 ProcessBox2;
             ENDIF
 
-            ! Half pallet replaced: counters first, then the waiting block
-            IF halfPalletFull AND DI_HalfPalletReplaced=1 THEN
+            ! Euro pallet replaced (flag set by the TRAP): back to layer 1
+            IF euroPalletReplaced THEN
+                euroPalletReplaced:=FALSE;
+                box1Layer:=1;
+                ! Not necessary but safe
+                box1State:=Box1Pos1;
+                euroPalletFull:=FALSE;
+            ENDIF
+
+            ! Half pallet replaced (flag set by the TRAP): layer 1 first, then the waiting block
+            IF halfPalletReplaced THEN
+                halfPalletReplaced:=FALSE;
                 box2Layer:=1;
                 blockState:=BlockPos1;
                 halfPalletFull:=FALSE;
-                SetDO DO_HalfPalletFull,0;
                 IF tableFull THEN
                     TransferStack;
                     tableFull:=FALSE;
                 ENDIF
             ENDIF
 
-            ! Liner stack refilled: place the missing liner and the waiting block
-            IF linerStackEmpty AND DI_LinersRefilled=1 THEN
+            ! Liners refilled (flag set by the TRAP): reload the counter, then the missing liner and the waiting block
+            IF linersRefilled THEN
+                linersRefilled:=FALSE;
                 linersLeft:=TotalLiners;
                 linerStackEmpty:=FALSE;
-                SetDO DO_LinerStackEmpty,0;
                 IF linerMissing THEN
                     linerMissing:=FALSE;
                     PlaceLayerLiner;
@@ -218,21 +245,12 @@ MODULE PalletProgram
                     ENDIF
                 ENDIF
             ENDIF
-
-            ! Euro pallet replaced (flag set by the TRAP): back to layer 1
-            IF euroPalletReplaced THEN
-                euroPalletReplaced:=FALSE;
-                box1Layer:=1;
-                ! Not necessary but safe
-                box1State:=Box1Pos1;
-                euroPalletFull:=FALSE;
-            ENDIF
             WaitTime 0.1;
         ENDWHILE
     ENDPROC
 
     !-----------------------------------------------------------------------
-    ! Interrupts: the operator replaced a pallet
+    ! Interrupts: operator buttons (pallet replaced, liners refilled)
     !-----------------------------------------------------------------------
     TRAP EuroPalletReplacedTrap
         ! Only considered if the pallet is already full to prevent false positives
@@ -241,6 +259,26 @@ MODULE PalletProgram
             SetDO DO_EuroPalletFull,0;
             ! Main sets layer 1 when the robot is free (no motion in a TRAP)
             euroPalletReplaced:=TRUE;
+        ENDIF
+    ENDTRAP
+
+    TRAP HalfPalletReplacedTrap
+        ! Only considered if the pallet is already full to prevent false positives
+        IF halfPalletFull THEN
+            ! Light off at once, even while the robot moves: the operator instantly sees the press was accepted
+            SetDO DO_HalfPalletFull,0;
+            ! Main sets layer 1 and moves the waiting block (no motion in a TRAP)
+            halfPalletReplaced:=TRUE;
+        ENDIF
+    ENDTRAP
+
+    TRAP LinersRefilledTrap
+        ! Only if the stack is empty, to prevent false positives
+        IF linerStackEmpty THEN
+            ! Light off at once, even while the robot moves: the operator instantly sees the press was accepted
+            SetDO DO_LinerStackEmpty,0;
+            ! Main reloads the counter, then places the missing liner and block (no motion in a TRAP)
+            linersRefilled:=TRUE;
         ENDIF
     ENDTRAP
 
