@@ -18,6 +18,7 @@ Vídeo de la simulación con smart components (1 nov, 6:51 min): `RobotStudio 11
 | Herramienta | `toolVacuum`, TCP (0, 0, 175), en el plano de los labios de las copas | Medido en RobotStudio: labios Z 644,88 − cara de montaje 469,88 |
 | Copas | 6 copas Ø50 en x = −160 / 0 / +160, y = ±100 | Medido |
 | Masa ventosa | **4,7 kg, CdG (0, 0, 100) respecto a `tool0`** (6 nov) | Estimada con las medidas de abajo, en aluminio (2700 kg/m³): disco 0,48, columna como tubo de pared 5 mm 0,21, tramo 0,06, placa roja 0,95, placa gris hueca de pared 5 mm 2,65, 6 copas + racores 0,30 → 4,65 kg, Z del CdG ≈ 99 mm. Con pared de 3 mm saldría 3,6 kg (se elige la más pesada). Inercias aún a 0 |
+| Diagrama de carga (6 nov) | *Product specification IRB 1600/1660*, 3HAC023604-001 rev. AW, p. 39 (normal) y p. 40 (*Vertical Wrist* ±10°); PDF en `ProyectoRobotica2/Docs` | Z desde la brida a lo largo del eje 6, L radial. Casos (ventosa 4,7 kg en Z 100 + carga con CdG a 275 de la brida): bloque 7,1 kg / Z 159; caja 1 6,7 kg / Z 152; caja 2 5,1 kg / Z 114 / L 15; liner 5,2 kg / Z 108. **Diagrama normal: no cumplen el bloque ni la caja 1** (7 kg solo hasta Z ≈ 115, 5 kg hasta ≈ 160). **Diagrama de muñeca vertical: cumplen todos** (8 kg hasta Z ≈ 159, 6 kg hasta ≈ 233). Vale porque la ventosa trabaja siempre vertical (todos los targets rx 180). Los diagramas suponen J0 = 0,012 kg·m² y 5 kg sobre el brazo (aquí no hay). Límites de inercia: J5 = m·((Z+0,065)²+L²) + máx(J0x, J0y) ≤ 0,6 kg·m²; J6 = m·L² + J0z ≤ 0,4 kg·m² (paso 3) |
 | Medidas de la ventosa (Cowork, 6 nov) | Desde la cara de montaje (Z = 0) hacia las copas: disco de brida Ø125 (0–15, chaflán a Ø115 en los últimos 5); columna Ø75 (15–85); tramo de 5 sin identificar (85–90); placa roja 170×180 arriba, ≈200×200 abajo, 10 de espesor (90–100); placa gris 360×240×30 (100–130); 6 racores Ø20×15 (130–145); 6 copas cónicas Ø20→Ø50, 30 de alto (145–175). Sin brazos, válvulas ni mangueras dibujados. Total 370×250×175. Ninguna biblioteca ni propiedad da masa | Base para estimar masa y CdG (T20). Macizo en aluminio saldría 9,6 kg (12 kg con el bloque, > 10 kg): hay que suponer piezas aligeradas |
 | `Home` | `CONST jointtarget` [0, 0, 0, 0, **90**, 0] | Postura de reposo con la ventosa vertical (con el eje 5 a 30 quedaba inclinada 60° y las copas pasaban cerca de la caja 2). Se va con `MoveAbsJ` al arrancar `Main` |
 
@@ -57,7 +58,9 @@ Criterio: origen en la esquina del lado del robot, X por el lado largo, Y alejá
 | `loadBox2Stack` | 2,4 kg | [0, 0, 100] | Bloque 3×2 |
 | `loadLiner` | 0,52 kg | [0, 0, 5] | Cartón ondulado (suposición) |
 
-Inercias a 0 (masa puntual) hasta que el profesorado confirme si hacen falta.
+**Inercias (6 nov)**, respecto al CdG de cada carga, como bloque macizo (Ix = m(b²+c²)/12…, con a, b, c a lo largo de X, Y, Z de la herramienta), en kg·m²: `loadBox1` (500×250×200, lado largo en X de la herramienta) 0,0171 / 0,0483 / 0,0521; `loadBox2` (130×130×200) 0,0019 / 0,0019 / 0,0011; `loadBox2Stack` (390×260×200) 0,0215 / 0,0384 / 0,0439; `loadLiner` (800×540×10) 0,0126 / 0,0277 / 0,0404. `toolVacuum`, respecto a su CdG (0, 0, 100), con las mismas piezas que la masa: 0,0274 / 0,0462 / 0,0605.
+
+**Límites de inercia del IRB 1600-10 (product spec, p. 44–45):** J5 = m·((Z+0,065)²+L²) + máx(J0x, J0y) ≤ 0,6 y J6 = m·L² + J0z ≤ 0,4 kg·m², con J0 = inercia del conjunto ventosa + carga respecto a su CdG. Cumplen todos los casos: bloque J5 0,49 / J6 0,10; caja 1 0,45 / 0,11; caja 2 0,23 / 0,08; liner 0,23 / 0,10; solo ventosa 0,17 / 0,06. El peor caso es el bloque, con un 18 % de margen en J5.
 
 ## 5. Targets base (módulo `PalletProgram`, CONST)
 

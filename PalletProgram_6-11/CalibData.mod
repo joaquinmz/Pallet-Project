@@ -28,18 +28,22 @@ MODULE CalibData
     ! Mass estimated from the measured parts in aluminium (2700 kg/m3), with the column as a tube
     ! and the grey plate hollow (5 mm walls): 4.65 kg, rounded up to 4.7 kg. CoG on the tool axis,
     ! 100 mm from the flange (tool0). Solid as drawn it would be 9.6 kg: more than the 10 kg payload
-    ! of the robot together with the 2.4 kg block
-    TASK PERS tooldata toolVacuum:=[TRUE,[[0,0,175],[1,0,0,0]],[4.7,[0,0,100],[1,0,0,0],0,0,0]];
+    ! of the robot together with the 2.4 kg block. Inertia about the CoG, from the same parts
+    ! (cylinders, plates and 6 cups as point masses of 0.05 kg)
+    TASK PERS tooldata toolVacuum:=[TRUE,[[0,0,175],[1,0,0,0]],[4.7,[0,0,100],[1,0,0,0],0.0274,0.0462,0.0605]];
 
     !-----------------------------------------------------------------------
     ! Load data
     !-----------------------------------------------------------------------
-    ! Payloads: CoG relative to the TCP of toolVacuum; inertia set to 0 (point mass) until confirmed
-    TASK PERS loaddata loadBox1:=[2,[0,0,100],[1,0,0,0],0,0,0];
-    ! Box 2 is picked with one corner cup (Cup21, x=-160, y=-100 from the TCP): the CoG is under that cup
-    TASK PERS loaddata loadBox2:=[0.4,[-160,-100,100],[1,0,0,0],0,0,0];
-    ! 3x2 block of box 2 (390 x 260 x 200 mm, 6 x 0.4 kg)
-    TASK PERS loaddata loadBox2Stack:=[2.4,[0,0,100],[1,0,0,0],0,0,0];
-    ! Liner: corrugated cardboard, 0.8 x 0.54 x 0.01 m3 x 120 kg/m3 = 0.52 kg
-    TASK PERS loaddata loadLiner:=[0.52,[0,0,5],[1,0,0,0],0,0,0];
+    ! Payloads: CoG relative to the TCP of toolVacuum. Inertia about the CoG of the load, as a solid
+    ! box: Ix = m(b2+c2)/12, Iy = m(a2+c2)/12, Iz = m(a2+b2)/12 (a, b, c = size along tool X, Y, Z)
+    ! Box 1: 500 x 250 x 200 mm (long side along the tool X), 2 kg
+    TASK PERS loaddata loadBox1:=[2,[0,0,100],[1,0,0,0],0.0171,0.0483,0.0521];
+    ! Box 2: 130 x 130 x 200 mm, 0.4 kg. Picked with one corner cup (Cup21, x=-160, y=-100 from
+    ! the TCP): the CoG is under that cup
+    TASK PERS loaddata loadBox2:=[0.4,[-160,-100,100],[1,0,0,0],0.0019,0.0019,0.0011];
+    ! 3x2 block of box 2: 390 x 260 x 200 mm (3 boxes along the tool X), 6 x 0.4 kg
+    TASK PERS loaddata loadBox2Stack:=[2.4,[0,0,100],[1,0,0,0],0.0215,0.0384,0.0439];
+    ! Liner: corrugated cardboard, 0.8 x 0.54 x 0.01 m3 x 120 kg/m3 = 0.52 kg (800 mm along the tool X)
+    TASK PERS loaddata loadLiner:=[0.52,[0,0,5],[1,0,0,0],0.0126,0.0277,0.0404];
 ENDMODULE
