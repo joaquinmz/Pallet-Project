@@ -25,8 +25,11 @@ MODULE CalibData
     ! Y away from the robot
     TASK PERS wobjdata wobjLinerStack:=[FALSE,TRUE,"",[[-500,-160,500],[0,0,0,1]],[[0,0,0],[1,0,0,0]]];
     ! toolVacuum: TCP on the cup faces, 175 mm from the flange, at the centre of the 6 cups
-    ! Mass and CoG are provisional (1 kg), to be estimated
-    TASK PERS tooldata toolVacuum:=[TRUE,[[0,0,175],[1,0,0,0]],[1,[0,0,1],[1,0,0,0],0,0,0]];
+    ! Mass estimated from the measured parts in aluminium (2700 kg/m3), with the column as a tube
+    ! and the grey plate hollow (5 mm walls): 4.65 kg, rounded up to 4.7 kg. CoG on the tool axis,
+    ! 100 mm from the flange (tool0). Solid as drawn it would be 9.6 kg: more than the 10 kg payload
+    ! of the robot together with the 2.4 kg block
+    TASK PERS tooldata toolVacuum:=[TRUE,[[0,0,175],[1,0,0,0]],[4.7,[0,0,100],[1,0,0,0],0,0,0]];
 
     !-----------------------------------------------------------------------
     ! Load data

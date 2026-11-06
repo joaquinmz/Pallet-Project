@@ -17,7 +17,8 @@ Vídeo de la simulación con smart components (1 nov, 6:51 min): `RobotStudio 11
 | Base de la tarea | No se movió (= mundo de la estación) | Los wobj y targets no cambian; `wobj0` ya no está alineado con la base del robot |
 | Herramienta | `toolVacuum`, TCP (0, 0, 175), en el plano de los labios de las copas | Medido en RobotStudio: labios Z 644,88 − cara de montaje 469,88 |
 | Copas | 6 copas Ø50 en x = −160 / 0 / +160, y = ±100 | Medido |
-| Masa ventosa | 1 kg provisional | **Pendiente de estimar** |
+| Masa ventosa | **4,7 kg, CdG (0, 0, 100) respecto a `tool0`** (6 nov) | Estimada con las medidas de abajo, en aluminio (2700 kg/m³): disco 0,48, columna como tubo de pared 5 mm 0,21, tramo 0,06, placa roja 0,95, placa gris hueca de pared 5 mm 2,65, 6 copas + racores 0,30 → 4,65 kg, Z del CdG ≈ 99 mm. Con pared de 3 mm saldría 3,6 kg (se elige la más pesada). Inercias aún a 0 |
+| Medidas de la ventosa (Cowork, 6 nov) | Desde la cara de montaje (Z = 0) hacia las copas: disco de brida Ø125 (0–15, chaflán a Ø115 en los últimos 5); columna Ø75 (15–85); tramo de 5 sin identificar (85–90); placa roja 170×180 arriba, ≈200×200 abajo, 10 de espesor (90–100); placa gris 360×240×30 (100–130); 6 racores Ø20×15 (130–145); 6 copas cónicas Ø20→Ø50, 30 de alto (145–175). Sin brazos, válvulas ni mangueras dibujados. Total 370×250×175. Ninguna biblioteca ni propiedad da masa | Base para estimar masa y CdG (T20). Macizo en aluminio saldría 9,6 kg (12 kg con el bloque, > 10 kg): hay que suponer piezas aligeradas |
 | `Home` | `CONST jointtarget` [0, 0, 0, 0, **90**, 0] | Postura de reposo con la ventosa vertical (con el eje 5 a 30 quedaba inclinada 60° y las copas pasaban cerca de la caja 2). Se va con `MoveAbsJ` al arrancar `Main` |
 
 ## 2. Layout
