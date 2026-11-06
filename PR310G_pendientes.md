@@ -2,188 +2,180 @@
 
 Documento vivo: lo que falta para aprobar y para sacar la A. Claude lo actualiza cada vez que hacemos algo o cambia una decisión (ver el registro de cambios al final).
 
-- Última revisión: **5 nov 2026**, sobre `main` (`d14f559`, Peru, 5 nov 01:59). Código de referencia: `PalletProgram_29-10/`, idéntico al que va dentro de `Pallet_Project.rspag`.
+- Última revisión: **6 nov 2026**, sobre `main` (`f16301b`, Peru, 5 nov) + rama `joaquin-valla`. Código de referencia: `PalletProgram_29-10/` (con interrupciones y `TPWrite`).
 - Leyenda: ✅ hecho · 🟡 a medias · ❌ falta. Responsables: **J** = Joaquín, **P** = Peru, **J+P** = los dos.
 - El reparto es una propuesta; hay que confirmarlo con Peru.
+- Este fichero fusiona la versión del repo (cambios de Peru del 5 nov) con la del proyecto de Claude (Excel, decisión C y valla). **Numeración:** la T36 es la de Peru (parpadeo del sensor); el tiempo de parada del robot pasa a **T42**.
 
-> Resumen a 5 nov:
-> - **El proyecto sigue sin aprobar.** Faltan el análisis de riesgos (req. 2) y la valla con los equipos de seguridad (req. 3), y casi todo lo que queda es de seguridad y documentación.
-> - Lo bueno: los **smart components ya están completos** (extra 2 ✅) y la detección de colisiones está casi lista (extra 3).
-> - Para la A, cerrar el **extra 3** y **uno más** (PLr/PL o presión analógica), además de la calidad de código.
-> - **Casi todo lo hecho desde el 30 oct es de Peru.** Las tareas que quedan para Joaquín son las de la sección 2.
+> Resumen a 6 nov:
+> - **Todavía no aprueba**, pero los requisitos 2 y 3 están cerca:
+>   - Excel de riesgos completo (19 filas, fuera del repo). Falta que Joaquín lo revise, lo pase a sus palabras y aplique los cambios de la valla (lista en `Seguridad_valla/PR310G_valla_modelado.md` §5).
+>   - **Valla y equipos modelados en una copia de práctica** (rama `joaquin-valla`, `Seguridad_valla/Pallet_Project_valla_practica.rspag`): radio 1950 → valla 2550, cortinas 3050, huecos para carretilla, alfombras SF5. Falta llevarlo a la estación de Peru (**T37**) y que Joaquín lo sepa rehacer.
+> - Peru cerró el 5 nov: `TPWrite` (T1), interrupciones de los pulsadores (T19) y la decisión de T4 (falta que la confirme Joaquín).
+> - **Falta:** T37, Measure, conjunto de colisión + ciclo (extra 3), envolvente (a = 2000), Highlighter y el extra 4.
 
-## 0. Qué ha cambiado desde el 30 oct (trabajo de Peru, 1–5 nov)
+## 0. Qué ha cambiado
 
-- **Cinta 2 con smart components** (`SC_Conveyor2`), igual que la cinta 1.
-- **Ventosa con 6 sensores**, uno por copa (`LS_Cup11…23` con su `Attacher` y `Detacher`). Ya engancha la caja 1, la caja 2 y el bloque 3×2.
-- **Liners como copias de 10 `Source`** (`SC_Liners`) en lugar del modelo fijo `LinerStack`: desaparece la colisión del 2.º liner.
-- **Vaciado de palés en simulación:**
-  - Europalé: `Queue_EuroPallet` (`Enqueue` en `Source.Executed`) + `Repeater` (`Count` 12) → `Delete` (5 nov; antes `DeleteAll`).
-  - Medio palé: `Queue_HalfPallet` + `Repeater` (`Count` 72), y `Repeater_Liners` (`Count` 2) para los dos liners del palé.
-  - El pulsador del operario está en cada smart component; un `AND` con la señal de "palé lleno" activa la DI del controlador.
-- **Reposición de liners** con `LinersRefilled` AND `LinerStackEmpty`, probada el 5 nov con 6 medios palés seguidos.
-- **RAPID:** `SetDO DO_EuroPalletFull / DO_HalfPalletFull / DO_LinerStackEmpty` a 1 al llenarse o vaciarse y a 0 al resetear y al arrancar. Son tres salidas nuevas, las luces para el operario.
-- **Mesa:** primero la fila lejana de la cinta (y = 130) y después la cercana, siempre con X descendente, para que la caja que lleva el robot no cruce la fila ya puesta.
-- **Planos de los sensores de las cintas a 10 mm de alto** (z 788…798), para que no detecten la caja colgando de la ventosa.
-- **Estado vigente: `Inicio_04-11`.** No cargar `Inicio_03-11` ni los anteriores.
-- **Vídeo del 1 nov** (`RobotStudio 11-01 comprimido.mp4`): llega al europalé lleno y a la capa 1 del medio palé.
-- **Sigue igual:** no hay valla, ni Excel de riesgos, ni código de presión analógica. El Pack and Go sigue guardado con RobotStudio **25.2**, siguen en la estación los restos `main`/`rBox1`/`Path_10`, y siguen en el código los fallos de calidad (`Main` con lógica, números sueltos, `cupsState`, 9E+09).
+**6 nov (Joaquín + Claude):** rama `joaquin-valla` con la copia de práctica de la valla (Pack and Go guardado con la 2024 e incluyendo los paquetes de ABB), el documento de la valla, tres capturas, este fichero fusionado y `PR310G_decisions_log.md`.
+
+**5 nov, noche (Joaquín + Claude, RobotStudio 2024):** modelada en `Practica\Pallet_Project_practica` toda la seguridad (103 piezas). Decisiones: radio 1950, carretilla con huecos de 1800/1500, SF5 (alfombra; se recomienda escáner), `EStop_Inside`, topes de palé, rearme azul en el mismo puesto. No hay valla ni cortinas en la librería de esa instalación; la caja en español se llama "Tetraedro".
+
+**5 nov, tarde (Peru, en `main`):** `TPWrite` junto a cada luz (T1); interrupciones `ISignalDI` + `TRAP` para europalé, medio palé y liners (T19); `Queue_EuroPallet` y `Queue_HalfPallet` con `Enqueue` en `Source.Executed` y `Repeater` → `Delete`; Pack and Go de las 20:23; decisión de T4; T36 (parpadeo del sensor) y T37 (juntar la seguridad de Joaquín).
+
+**5 nov (Joaquín + Claude):** Excel `PR310G_Group2_Risk_Assessment.xlsx` con 19 filas y PLr por función; decisión C con PLr e; `Scope & assumptions`; `PR310G_datos_celula.md`; plantas v1 y v2; la estación abre en la 2024.
+
+**1–5 nov (Peru):** cinta 2, ventosa con 6 sensores, liners como copias, vaciado de palés, reposición de liners, luces `DO_…Full` / `DO_LinerStackEmpty`, nuevo orden de la mesa y estado `Inicio_04-11`.
 
 ---
 
 ## 1. Estado contra el enunciado
 
-### 1.1 Requisitos mínimos (sin los 9 no se aprueba)
+### 1.1 Requisitos mínimos
 
 | # | Requisito | Estado | Por qué / qué falta |
 |---|---|---|---|
-| 1 | Robot y layout para las dos cajas | ✅ | IRB 1600-10/1.45. Punto flojo: la ventosa sigue con 1 kg provisional y las inercias a 0 (T20, T32). |
-| 2 | Análisis de riesgos con la plantilla Excel | ❌ | No existe (T2). |
-| 3 | Valla y equipos de seguridad en RobotStudio y en la presentación | ❌ | No hay valla en la estación. Safety HT25.pdf sigue bloqueado (T3, T6). |
-| 4 | Señales configuradas y usadas | ✅ | 15 señales: `DO_Cup11…23`, `DO_EuroPalletFull`, `DO_HalfPalletFull`, `DO_LinerStackEmpty`, `DI_Box1Arrived`, `DI_Box2Arrived`, `DI_EuroPalletReplaced`, `DI_HalfPalletReplaced`, `DI_LinersRefilled` y `AI_VacuumPressure` (todavía sin usar). |
-| 5 | Secuencia completa, cualquier orden y alternancia | ✅ | Lógica completa y probada con los dos palés y la reposición de liners. Mensaje al operario: luz (DO) y `TPWrite` (T1, 5 nov). Los pulsadores van por interrupción (T19). |
-| 6 | Sin colisiones | 🟡 | Resuelto: los liners ya son copias, así que no hay colisión con `LinerStack`. (a) Copas apoyadas 20 mm sobre la otra fila de la mesa y (b) cajas fuera del conjunto de colisión: decidido justificarlo (T4, falta confirmación de J); (c) casi colisiones esperadas con `LinerStand` al coger los 4 liners de abajo (T4). |
-| 7 | Instrucciones de movimiento | ✅ | Punto flojo: `z10` en todas partes sin nombre ni justificación (T16). |
-| 8 | ~1 s de vacío | ✅ | `WaitTime\InPos,VacuumTime`. |
-| 9 | Nombres, legibilidad, comentarios | ✅ con fallos | Siguen `Main` con lógica, números sueltos, `cupsState` sin uso y 9E+09 (T15–T18). En `CalibData` faltan comentarios por wobj, se mezclan tabuladores y espacios, y el comentario de `loadBox2` está desactualizado (T31). |
+| 1 | Robot y layout | ✅ | Punto flojo: masa de la ventosa provisional e inercias a 0 (T20, T32). |
+| 2 | Análisis de riesgos (Excel) | 🟡 casi | 19 filas. Falta revisión de Joaquín, pasarlo a sus palabras y **aplicar los cambios de la valla** (T2). |
+| 3 | Valla y equipos de seguridad | 🟡 | **Modelado en la copia de práctica** (rama `joaquin-valla`). Falta pasarlo a la estación de Peru (T37), Measure y confirmar T (T42) y a (T39). |
+| 4 | Señales | ✅ | 15 señales. |
+| 5 | Secuencia completa | ✅ | Mensaje al operario: luz (DO) y `TPWrite` (T1). Pulsadores por interrupción (T19). |
+| 6 | Sin colisiones | 🟡 | T4 decidida por P (justificar copas y cajas fuera del conjunto), falta que la confirme J; casi colisiones con `LinerStand`; falta comprobar contra la valla (T14). |
+| 7 | Movimiento | ✅ con matiz | `z10` sin nombre y todo a `v100` (T16). |
+| 8 | ~1 s de vacío | ✅ | |
+| 9 | Nombres y legibilidad | ✅ con fallos | T15–T18, T31. |
 
-### 1.2 Extras (2 aspectos = 1 punto; 3 aspectos = 2 puntos; uno a medias no cuenta)
+### 1.2 Extras
 
 | Extra | Estado | Qué falta |
 |---|---|---|
-| 1. Presión de vacío analógica | ❌ | Nada nuevo (T9). |
-| 2. Smart components | ✅ | Cintas, ventosa, bloque, liners, vaciado de palés y reposición de liners, probados por Peru del 1 al 5 nov. Riesgo en la demo: las copias reales que aparecen al cargar el estado (T33). |
-| 3. Detección de colisiones | 🟡 casi | Conjunto A = robot + herramienta; B = cintas, mesa, soporte y palés. Ciclo completo sin colisiones reales, solo casi colisiones esperadas. Falta: añadir la valla al grupo B, decidir qué hacer con las casi colisiones con `LinerStand` y enseñarlo en el vídeo y la demo (T14). |
-| 4. PLr / PL | ❌ | Depende de T2 y T3 (T8). |
-
-**Plan de extras (cambia respecto al 30 oct):** smart components ✅ + colisiones (cerrar T14) + **PLr/PL**. PLr/PL va unido a los requisitos 2 y 3, que hay que hacer de todos modos. La presión analógica queda como cuarto extra de reserva si sobra tiempo.
+| 1. Presión analógica | ❌ | De reserva (T9). |
+| 2. Smart components | ✅ | Riesgo en la demo: copias reales (T33). |
+| 3. Detección de colisiones | 🟡 | Añadir la valla, las cortinas y la puerta al grupo B (después de T37), umbral de casi colisión, ciclo completo y grabarlo (T14). |
+| 4. PLr / PL | 🟡 | PL de SF1 hecho. Faltan PL de SF2–SF5 (SF5 nueva: alfombra/escáner, PFHd del fabricante) y diagramas de bloques (T8). |
 
 ### 1.3 Entregables
 
 | Entregable | Estado | Qué falta |
 |---|---|---|
-| Documento con los extras elegidos | ❌ | T24. |
-| Pack and Go | 🟡 | El de `main` es del 5 nov (20:23, con las interrupciones y el `Repeater` de `SC_Conveyor1`) y sigue **guardado con 25.2** (T7, T26). |
-| Station Viewer con una secuencia completa | ❌ | T25 (preguntar qué es "secuencia completa", T6). |
-| Descripción de los equipos fuera de la célula | ❌ | T24. |
-| Excel de riesgos | ❌ | T2. |
+| Documento de extras | ❌ | T24 |
+| Pack and Go | 🟡 | El de `main` es del 5 nov (20:23) y sigue guardado con 25.2 (T7, T26). Falta juntar la seguridad (T37). |
+| Station Viewer | ❌ | T25 |
+| Descripción de equipos | ❌ | T24 (base: tabla de `Seguridad_valla/PR310G_valla_modelado.md` §3, en palabras propias) |
+| Excel de riesgos | 🟡 casi | T2 |
 
 ### 1.4 Requisitos personales
-- [ ] Seminario de ética: asistir y participar (J y P).
-- [ ] Presentación: cada uno explica toda la célula y todo el programa. Ahora también **todos los smart components**, que ha hecho Peru (ver `PR310G_practica_defensa.md`).
+- [ ] Seminario de ética (J y P).
+- [ ] Presentación: cada uno explica toda la célula, el programa, los smart components y la seguridad.
 
 ---
 
 ## 2. Tareas
 
-Formato: **qué** · responsable · esfuerzo · depende de · cómo se comprueba.
-
-### Prioridad 0 – esta semana
-- [ ] **T6 Correo a My Legendi** · J · 20 min · preguntas de la sección 4. Si ya se ha enviado, apuntar la respuesta en el registro de decisiones.
-- [ ] **T7 Probar el Pack and Go en RobotStudio 2024.4** · J+P · 30 min · sigue guardado con 25.2 · abre, el controlador arranca y el ciclo corre. Ahora es aún más importante: hay muchos smart components y rehacerlos en la 2024.4 sería muy caro.
-- [x] **T35 Subir el merge de `main`** (hecho: `b08affb` está en `origin/main`, comprobado el 5 nov) · J · 5 min · el `main` local tiene el merge de `docs-joaquin` (`b08affb`) sin subir (`ahead 2`) · `git push` desde Windows; GitHub muestra `PR310G_pendientes.md` en `main`.
-
-- [ ] **T37 Juntar la celda de seguridad de Joaquín con la estación de Peru** · J+P · **siguiente paso (6 nov)** · Joaquín hizo la valla y los equipos de seguridad sobre un `.rspag` más antiguo; RobotStudio no fusiona estaciones. 1) Joaquín pasa su `.rspag` (ruta o rama). 2) Claude compara los dos `Station/Pallet_Project.rsstnx` (XML dentro del `.rspag`): objetos de seguridad y posiciones, diferencias en los smart components (a la suya le faltarán como mínimo el `Repeater` de `SC_Conveyor1` y los `Enqueue` en `Source.Executed`), señales, lógica de estación, conjunto de colisión y versión de RobotStudio con la que se guardó (sirve para T7). 3) Plan probable: partir de la estación de Peru (smart components al día, programa con interrupciones y `TPWrite`, `Inicio_04-11`) e importar la celda de seguridad (en la de Joaquín *Guardar como biblioteca*, en la de Peru *Importar biblioteca* y colocar con las posiciones del XML); rehacer señales o lógica de seguridad si las hay y añadir la valla al grupo B del conjunto de colisión. Alternativa: partir de la de Joaquín y rehacer los cambios de los smart components, solo si la suya tiene mucho más.
+### Prioridad 0
+- [ ] **T37 Juntar la celda de seguridad de Joaquín con la estación de Peru** · J+P · **siguiente paso** · la valla está en `Seguridad_valla/Pallet_Project_valla_practica.rspag` (rama `joaquin-valla`), hecha sobre la estación del 5 nov por la mañana; RobotStudio no fusiona estaciones. 1) Comparar los dos `Station/Pallet_Project.rsstnx` (XML dentro del `.rspag`): objetos de seguridad y posiciones, smart components (a la de práctica le faltan el `Repeater` de `SC_Conveyor1` y los `Enqueue` en `Source.Executed`), señales, lógica de estación y conjunto de colisión. 2) Plan probable: partir de la estación de Peru e importar la celda de seguridad (en la de práctica seleccionar las 103 piezas → *Guardar como biblioteca*; en la de Peru *Importar biblioteca*; las piezas se crearon en coordenadas de mundo, así que deberían caer en su sitio, comprobarlo). 3) Añadir la valla al grupo B. **No fusionar la estación de práctica en `main` como entregable:** la modeló Claude; Joaquín tiene que saber rehacerla.
+- [ ] **T6 Correo a My Legendi** · J · 20 min · preguntas de la sección 4.
+- [ ] **T7 Probar el Pack and Go en RobotStudio 2024.4** · J+P · 30 min · el de `main` sigue guardado con 25.2; la copia de práctica ya abre y se guarda en la 2024.
+- [x] ~~T35 Subir el merge de `main`~~ · hecho (`b08affb`).
 
 ### Prioridad 1 – requisitos mínimos
-- [ ] **T2 Excel de riesgos** (req. 2) · **J** · 4–6 h · decisión de T3.
-  - Modos: operación normal, cambio de palés, reposición de liners, atascos en las cintas (y el túnel de entrada), mantenimiento y programación (T1 a 250 mm/s con dispositivo de habilitación).
-  - Para cada riesgo: riesgo, medida y riesgo residual.
-  - Añadir el riesgo de proceso que apunta la memoria: confirmar el cambio sin haber cambiado el palé. Medida posible: sensor de presencia de palé.
-- [ ] **T3 Valla y equipos de seguridad** (req. 3) · **J** · 2–4 h · T6.
-  - Valla con altura y distancia justificadas (ISO 13857; cortinas según ISO 13855, S = K·T + C), puerta enclavada, paradas de emergencia y cortinas o escáner en los accesos de los palés y de la reposición de liners.
-  - **Decidir primero** cómo sigue trabajando el robot con el otro producto mientras se cambia un palé: SafeMove (zonas vigiladas) o una protección separada por lado. La memoria ya lo plantea así.
-  - Al terminar, añadir la valla al grupo B del conjunto de colisión.
-  - Los pulsadores del operario (`EuroPalletReplaced`, `HalfPalletReplaced`, `LinersRefilled`) y las tres luces van **fuera** de la valla: dibujarlos o describirlos.
-- [x] **T1 Mensaje al operario** (req. 5) · P (con Claude) · ✅ 5 nov · `TPWrite` una sola vez junto a cada `SetDO ...,1` (europalé lleno, medio palé lleno, pila de liners vacía), en inglés y diciendo qué hacer. Probado: el del europalé sale una vez en *Controlador* → *Ventana de operador* y el robot sigue con la caja 2.
-- [ ] **T4 Colisiones en la mesa** (req. 6) · J+P · 🟡 decidido por P el 5 nov, falta que lo confirme J:
-  - (a) **Se queda como está y se justifica.** Al dejar las 3 cajas de la fila cercana, tres copas sin vacío se apoyan 20 mm sobre el borde de la fila lejana, sin entrar; el robot solo baja y sube en vertical (no arrastra) y las copas de fuelle absorben tolerancias. Descartado: separar las filas (haría falta 160 mm y el bloque 3×2 ya no se coge entero), coger con `Cup11` (las copas libres irían sobre la cinta 2, a la altura de la caja que espera) y llenar primero la fila cercana (habría que subir el tránsito de la caja 2 unos 120 mm, ≈1 min más por medio palé).
-  - (b) **Las cajas no van en el conjunto de colisión** (se tocan a propósito: bloque 3×2, cajas pegadas en el palé, la ventosa toca la que coge; además son copias que crea el `Source` durante la simulación). Que la caja que se lleva no pase sobre las puestas lo asegura la trayectoria (fila lejana primero, X descendente; base a 900, techos a 970) y se enseña con el rastreo del TCP.
-  - La prueba puntual para enseñarlo (caja estática `Box2_Test` en la fila lejana y un 2.º conjunto de colisión) se hace en la T14.
+- [ ] **T2 Excel de riesgos** · **J** · casi hecho.
+  - [x] Plantilla, `Scope & assumptions`, 19 filas, PLr por función.
+  - [ ] Revisión de Joaquín (sección 3) y **pasar a sus palabras**.
+  - [ ] **Cambios de la valla** (filas 5, 6, 7, 8, 9, 10, 13, 14, 21 y `Scope & assumptions`): lista exacta en `PR310G_valla_modelado.md` §5. Incluye carretilla y SF5.
+  - [ ] Añadir el riesgo de proceso de la memoria: confirmar el cambio sin haber cambiado el palé (sensor de presencia de palé).
+  - [ ] Comprobar supuestos: a = 2000, T = 0,6 s, PL d de ISO 10218-1, descarga del IRC5, una copa para la caja 2.
+- [ ] **T3 Valla y equipos** · **J**.
+  - [x] Decisión C (cortina por hueco → Pluto → parada del IRC5, rearme manual fuera), PLr e.
+  - [x] Radio 1950 → valla 2550, cortinas 3050; huecos de 1800 / 1500 / 740.
+  - [x] Modelado en la copia de práctica (103 piezas, nombres, colores, grupo `Safety_Fence`), Pack and Go en la rama `joaquin-valla`.
+  - [ ] Subgrupos `LightCurtains`, `Door`, `OperatorStations` y raíz `Safety` (pasos en `PR310G_valla_modelado.md` §2.6).
+  - [ ] Medir con **Modelado → Medir → Punto a punto** y hacer capturas.
+  - [ ] Joaquín tiene que saber rehacerlo a mano (defensa y uso de IA).
+  - [ ] **T42** Tiempo de parada real del IRB 1600 (ABB 3HAC048645) para recalcular S (T = 0,6 s supuesto).
+  - [ ] **T39** Envolvente vista de lado: altura máxima del TCP con carga frente a a = 2000.
+  - [ ] **T40** Actualizar `PR310G_datos_celula.md` §1, §5 y §9b (lista en `PR310G_valla_modelado.md` §5).
+- [x] **T1 Mensaje al operario** · P (con Claude) · ✅ 5 nov · `TPWrite` una sola vez junto a cada `SetDO …,1`, en inglés y diciendo qué hacer.
+- [ ] **T4 Colisiones en la mesa** · J+P · 🟡 decidido por P el 5 nov, **falta que lo confirme J**:
+  - (a) Se queda como está y se justifica: al dejar las 3 cajas de la fila cercana, tres copas sin vacío se apoyan 20 mm sobre el borde de la fila lejana, sin entrar; el robot solo baja y sube en vertical. Descartado: separar las filas, coger con `Cup11` y llenar primero la fila cercana.
+  - (b) Las cajas no van en el conjunto de colisión (se tocan a propósito y son copias del `Source`); la trayectoria asegura que la caja que se lleva no pase sobre las puestas.
+  - La prueba puntual (`Box2_Test` y un 2.º conjunto de colisión) se hace en la T14.
 
-### Prioridad 2 – extras para la A
-- [ ] **T14 Cerrar la detección de colisiones** (extra 3) · J+P · 1 h · T3 y T4.
-  - Prueba puntual de T4: copia estática de `Box2` (`Box2_Test`) en un hueco de la fila lejana de la mesa (elegir el que tenga como vecino la última caja que se deja), 2.º conjunto de colisión (A = herramienta, B = `Box2_Test`), reproducir hasta la 6.ª caja y pausar: debe salir solo el contacto de las copas al dejar la fila cercana. Borrar `Box2_Test` y el conjunto 2 **antes** de que el robot coja el bloque (los sensores de la ventosa la engancharían). Hace falta saber dónde está el origen de la pieza `Box2` para colocarla.
-  - Valla en el grupo B.
-  - Decidir el umbral de casi colisión. Hoy, 50 mm hace saltar avisos con `LinerStand` al coger los 4 liners de abajo, que son esperados. Bajar el umbral para ocultarlos puede parecer trampa; mejor explicarlo.
-  - Grabar un ciclo con el panel de colisiones visible.
-- [ ] **T8 PLr/PL** (extra 4) · **J** · 2–3 h · T2 y T3 · para cada función de seguridad: S/F/P → PLr, diagrama de bloques, suma de PFHd (sensor + relé o PLC de seguridad + entrada de parada del robot 5,79·10⁻⁸) → PL ≥ PLr. Guía: `PR310G_EN_ISO_13849-1_Jokab.pdf`.
-- [ ] **T9 Presión analógica** (extra 1, de reserva) · **J** · 3–5 h · `VacuumControl` y `SC_Gripper` (P) · presión requerida por caja como CONST (4 y 2 bar), espera a `AI_VacuumPressure` con tiempo máximo y gestión de error, y simular la subida en un smart component. Se pueden reutilizar `Expression`, `Timer` o `Counter`; no está probado. Resuelve también T18.
-- [x] ~~T10 `SC_Conveyor2`~~ · hecho por P (1 nov). Joaquín debe saber rehacerlo (práctica, bloque H).
-- [x] ~~T11 Caja 2 en la ventosa~~ · hecho por P (1 nov), con 6 sensores.
-- [x] ~~T12 Bloque 3×2~~ · hecho por P (1 nov).
-- [x] ~~T13 Liners con smart components~~ · hecho por P (4 nov), con `SC_Liners` y 10 `Source`.
-- [x] ~~T5 Colisión con `LinerStack`~~ · resuelta (los liners son copias).
+### Prioridad 2 – extras
+- [ ] **T14 Detección de colisiones** · J+P · 1 h · después de T37 · añadir `Safety_Fence`, `LightCurtain_*` y `Door_Maintenance` a los objetos B; prueba puntual de T4 con `Box2_Test` (borrarla antes de que el robot coja el bloque); umbral de casi colisión (50 mm salta con `LinerStand` en los 4 liners de abajo: explicarlo, no esconderlo); grabar un ciclo con el panel de colisiones visible.
+- [ ] **T8 PLr/PL** · **J** · 2 h.
+  - [x] SF1: PLr e; PL e = 5,02·10⁻⁹ + 2·10⁻⁹ + 4,29·10⁻⁸ = 4,99·10⁻⁸.
+  - [x] PLr de SF2 e, SF3 d, SF4 d, cintas d.
+  - [ ] PL de SF2, SF3, SF4 y **SF5** (PFHd de la alfombra o del escáner del fabricante, no inventarlo).
+  - [ ] Diagramas de bloques; **T38** verificar en el manual del IRC5 (3HAC047137-001, pág. 20) el emparejamiento de los PFHd (4,29·10⁻⁸ en vez del 5,79·10⁻⁸ de Jokab).
+- [ ] **T41 Luces con Highlighter** · J · 30 min · verificar en pantalla que existe en la 2024 y conectar las 3 DO en *Lógica de estación*, sin tocar RAPID.
+- [ ] **T9 Presión analógica** (reserva) · J · 3–5 h · CONST de 4 y 2 bar, espera a `AI_VacuumPressure` con tiempo máximo y gestión de error, subida simulada en un smart component. Resuelve también T18.
+- [x] ~~T5, T10–T13~~ · hechas (Peru).
 
-### Prioridad 3 – calidad de implementación y código (2 puntos)
-- [ ] **T15 `Main` solo controla el flujo** · J · 45 min · sacar los tres resets del operario (con sus `SetDO`) a sus propias PROC.
-- [ ] **T16 Sin números mágicos** · J · 30 min · `WaitTime 0.1`, `v100,fine` del `MoveAbsJ`, `z10` (zonas con nombre o justificadas), `VAR num box1State:=1` → `:=Box1Pos1` (lo mismo en `box2State` y `blockState`).
-- [ ] **T17 `DEFAULT` de `ApproachHeight`** · J · 20 min · `ErrWrite` + `Stop` en vez de 9E+09.
-- [ ] **T18 `cupsState`** · J · con T9 o quitarla · 5 min.
-- [x] **T19 Pulsos cortos del operario** · P (con Claude) · ✅ · **confirmado el 5 nov** (vídeo de las 16:37): si el robot está en mitad de un bloque, RAPID pierde el pulso; las cajas se borran pero `DO_…Full` sigue a 1, y una 2.ª pulsación borraba 12 cajas más. Hecho con `ISignalDI` + `TRAP` (apaga la DO en el acto y deja una bandera para `Main`): europalé, medio palé y `DI_LinersRefilled` hechos y probados (5 nov, el último con 6 medios palés seguidos).
-- [ ] **T36 Parpadeo del sensor de la cinta 1** · J+P · a tener en cuenta · el analizador de señales (5 nov) muestra a veces un 2.º `Source.Executed` ≈0,8 s después de levantar la caja 1: sale una copia de más y la cola del europalé puede quedar con una entrada de más (una caja sin borrar en el palé). Causa probable: el `MoveJ` hacia la aproximación del palé (TCP 850 mm) baja la caja por debajo del plano (788–798) cuando aún está sobre la cinta. Posible arreglo: aproximación a los palés a altura de tránsito o punto intermedio. Llevaba un rato sin fallar cuando se dejó.
-- [ ] **T31 Retocar `CalibData.mod`** (apuntado por P el 4 nov) · J · 45 min · un comentario por wobj (dónde está el origen y hacia dónde van los ejes), solo espacios o solo tabuladores, y corregir el comentario de `loadBox2`, que dice "rows ascending Y" cuando ahora va primero la fila lejana.
-- [ ] **T20 Masa y centro de gravedad de la ventosa** (req. 1) · J · 1 h · volumen × densidad; comprobar ventosa + 2,4 kg ≤ 10 kg en el diagrama de carga.
-- [ ] **T32 Inercias de las `loaddata`** · J · 30 min · caja maciza: Ix = m(b²+c²)/12, etc., o justificar la masa puntual. Comprobar también el `cog` de `loadBox2Stack` respecto al TCP de `PickTableStack`.
-- [ ] **T21 Referencia del `cog`** · J · 15 min · comprobar en el manual de RAPID si va respecto al TCP o a `tool0`.
-- [ ] **T22 Limpiar la estación** · P · 15 min · siguen `main`, `rBox1` y `Path_10` en la estación (comprobado en el Pack and Go del 4 nov).
-- [ ] **T23 Medidas de las cajas** (menor) · P · 10 min · reducir 1 mm el largo y el ancho, como permite el enunciado.
+### Prioridad 3 – calidad de código
+- [ ] **T15** `Main` solo controla el flujo · J · 45 min
+- [ ] **T16** Sin números mágicos · J · 30 min (`WaitTime 0.1`, `v100,fine` del `MoveAbsJ`, `z10` y velocidades con nombre; ahora todo a `v100`)
+- [ ] **T17** `DEFAULT` de `ApproachHeight` con `ErrWrite` + `Stop` · J · 20 min
+- [ ] **T18** `cupsState` · J · 5 min
+- [x] **T19 Pulsos cortos del operario** · P (con Claude) · ✅ 5 nov · `ISignalDI` + `TRAP` para europalé, medio palé y `DI_LinersRefilled`, probados.
+- [ ] **T36 Parpadeo del sensor de la cinta 1** (de Peru) · J+P · a veces un 2.º `Source.Executed` ≈0,8 s después de levantar la caja 1 (copia de más). Causa probable: el `MoveJ` hacia la aproximación del palé baja la caja por debajo del plano (788–798) cuando aún está sobre la cinta. Posible arreglo: aproximación a altura de tránsito o punto intermedio.
+- [ ] **T31** Retocar `CalibData.mod` · J · 45 min
+- [ ] **T20** Masa y centro de gravedad de la ventosa · J · 1 h
+- [ ] **T32** Inercias de las `loaddata` · J · 30 min
+- [ ] **T21** Referencia del `cog` · J · 15 min
+- [ ] **T22** Limpiar `main`, `rBox1` y `Path_10` de la estación · P · 15 min
+- [ ] **T23** Medidas de las cajas −1 mm · P · 10 min
 
 ### Entregables, demo y cierre
-- [ ] **T33 Lista de comprobación antes de la demo** · J+P · 20 min · cargar `Inicio_04-11` (nunca `Inicio_03-11`), borrar las copias reales que aparezcan en el panel *Diseño* (`Box1_xxx`, `Box2_xxx`; nunca las plantillas), poner los pulsadores a 0 y reiniciar RobotStudio si el I/O Simulator no se refresca. Ensayar la demo de 10 minutos con un **cambio de palé en directo**.
-- [ ] **T24 Documento de extras y descripción de los equipos** · **J** · 1–2 h · T3 y T8 · escrito por nosotros, en inglés.
-- [ ] **T25 Station Viewer** · P · 1 h.
-- [ ] **T26 Pack and Go final** en la versión que abra en la sala · P · T7.
-- [ ] **T27 Vídeo final** hasta llenar los dos palés, con la cámara alejada · P.
-- [ ] **T28 Ordenar el repo** (`PalletProgram_29-10` como versión buena; archivar `_28-10`, `V1` y los `.mod` de la raíz) · P.
-- [ ] **T29 No subir a Canvas** `CLAUDE.md`, `MEMORIA_PROYECTO.md` ni este documento.
-- [ ] **T30 Práctica de la defensa** · J · ver `PR310G_practica_defensa.md` y `PR310G_preguntas_defensa.md`. Ahora incluye entender y rehacer los smart components.
+- [ ] **T33** Lista de comprobación de la demo · J+P · cargar `Inicio_04-11`, borrar copias reales, pulsadores a 0, ensayar con un cambio de palé en directo.
+- [ ] **T24** Documento de extras y descripción de equipos (en inglés, escrito por nosotros) · J
+- [ ] **T25** Station Viewer · P
+- [ ] **T26** Pack and Go final en la versión que abra en la sala · P
+- [ ] **T27** Vídeo final · P
+- [ ] **T28** Ordenar el repo · P
+- [ ] **T29** No subir a Canvas `CLAUDE.md`, `MEMORIA_PROYECTO.md` ni los documentos de Claude
+- [ ] **T30** Práctica de la defensa · J (bloques L y M; añadir valla 1950/2550/3050, SF5, carretilla, interrupciones de Peru)
 
 ---
 
 ## 3. Riesgos para la nota
 
-1. **No aprobar:** sin el Excel (T2) y la valla (T3) es una F. Son ahora el cuello de botella y los dos son de Joaquín.
-2. **Versión de RobotStudio:** el Pack and Go sigue en la 25.2. Si no abre en la 2024.4, rehacer los smart components es muy caro (T7).
-3. **Demo frágil:** copias reales al cargar el estado, `Detacher` que suelta lo último que detectó, el I/O Simulator que no se refresca. Peru conoce los trucos; Joaquín también tiene que conocerlos (T33).
-4. **Defensa de Joaquín:** casi todo lo hecho del 1 al 5 nov es de Peru (smart components y RAPID). La profesora pregunta a cada uno por todo. La seguridad (T2, T3, T8) y la calidad del código (T15–T17, T31, T32) son el trabajo propio que Joaquín puede defender.
-5. **Seguridad coherente con la secuencia:** el robot sigue trabajando mientras se cambia un palé (T3).
-6. **Carga del robot sin justificar** (T20, T21, T32).
-7. **Colisiones en la mesa:** las copas tocan la otra fila y caja contra caja no se comprueba (T4).
-8. **Calidad de código:** sin cambios desde el 30 oct (T15–T18, T31).
-9. **Uso de IA:** los documentos de entrega, escritos por nosotros (Ouriginal); nada de CLAUDE.md ni de la memoria en Canvas.
-10. **Calendario:** la presentación sigue sin fecha (módulo de las semanas 44 a 47, como tarde hacia el 20 nov).
-
----
+1. **Uso de IA (el más grave):** el texto del Excel y la valla de la copia de práctica los ha hecho Claude. Hay que pasar el texto a palabras propias y que Joaquín sepa rehacer la valla y explicar cada pieza.
+2. **Juntar estaciones (T37):** si se hace mal, se pierden los arreglos de Peru en los smart components. Partir de la estación de Peru.
+3. **Coherencia Excel ↔ estación:** el Excel aún dice transpaleta, 1850/2450, "dead-end corridor" y alfombra opcional.
+4. **Defender cada distancia:** 1950 (liner), 2550 (c = 600), 3050 (S = 1090 con T supuesto), anchos de hueco para carretilla, por qué SF5 es otra función.
+5. **Supuestos sin verificar:** T = 0,6 s (T42), a = 2000 (T39), PFHd de la alfombra/escáner, anchos de carretilla, PFHd del IRC5 (T38).
+6. **Alfombra + carretilla:** combinación poco creíble; tener el escáner como respuesta.
+7. **Versión y demo frágil** (T7, T33). El Pack and Go de `main` sigue en 25.2.
+8. **Defensa de Joaquín:** casi todo el RAPID y los smart components del 1 al 5 nov son de Peru; la profesora pregunta a cada uno por todo.
+9. **Carga del robot, colisiones en la mesa, calidad de código** (T20, T21, T32, T4, T15–T18, T31).
+10. **Calendario:** presentación sin fecha, como tarde hacia el 20 nov.
 
 ## 4. Preguntas para el profesorado (correo a My Legendi, T6)
 
-- [ ] Tabla de Safety HT25.pdf (distancia y altura de la valla).
-- [ ] Fecha y sala de la presentación, y versión de RobotStudio de las salas. ¿Podemos presentar con portátil y RobotStudio 2025?
-- [ ] ¿Es válido coger la caja 2 con una sola copa de la ventosa estándar?
-- [ ] ¿Vale una luz (DO) como "mensaje al operario" o quiere un mensaje en el FlexPendant?
-- [ ] Extra 1: ¿cómo espera que se simule la señal analógica?
-- [ ] Station Viewer: ¿"una secuencia completa" es un ciclo de cada caja o los dos palés llenos?
-- [ ] `loaddata`: ¿inercias o masa puntual? ¿Masa y material del liner?
+- [ ] Tabla de Safety HT25.pdf (altura y distancia de la valla). Usamos ISO 13857, tabla 2.
+- [ ] Fecha y sala de la presentación; versión de RobotStudio de las salas.
+- [ ] ¿Vale coger la caja 2 con una sola copa?
+- [ ] ¿Vale una luz (DO) + `TPWrite` como "mensaje al operario"?
+- [ ] ¿Acepta SafeMove2 (PL d) según ISO 10218-2, o hay que llegar a PL e?
+- [ ] Columna N de la plantilla de riesgos (OK/NOK sin cabecera): ¿hay que usarla?
+- [ ] Extra 1: ¿cómo simular la señal analógica?
+- [ ] Station Viewer: ¿qué es "una secuencia completa"?
+- [ ] `loaddata`: ¿inercias o masa puntual? ¿Masa del liner?
 
----
-
-## 5. Calendario orientativo (desde el 5 nov)
+## 5. Calendario orientativo
 
 | Cuándo | Qué |
 |---|---|
-| Jue 5 – vie 6 nov | T35 push, T6 correo, T7 prueba en la 2024.4, T1 `TPWrite`, decidir T3, empezar T2 |
-| Fin de semana 7–8 nov | T2 Excel, T8 PLr/PL, práctica (bloques A–D y H) |
-| Semana del 9 nov | T3 valla en RobotStudio, T14 colisiones, T4, T15–T17, T31, T32, T20 |
-| Semana del 16 nov | T24 documento, T25 Station Viewer, T26 Pack and Go final, T27 vídeo, T33 ensayo y simulacro. T9 presión si sobra tiempo. |
-
----
+| Vie 6 nov | T37 (juntar estaciones), T2 (revisión + cambios de la valla), T6 correo, confirmar T4 |
+| Fin de semana 7–8 nov | T14, T39, T41, T8 (SF2–SF5), subgrupos y Measure |
+| Semana del 9 nov | T7, T15–T17, T31, T32, T20, T36 |
+| Semana del 16 nov | T24, T25, T26, T27, T33 ensayo y simulacro |
 
 ## 6. Registro de cambios
 
-- 2026-10-30 · Documento creado tras revisar el repo (rama `cambios-peru-30-10`).
-- 2026-11-05 · Revisión de `main` (`d14f559`):
-  - Smart components completos (extra 2 ✅); T5 y T10–T13 cerrados; T1 casi hecho (luces DO).
-  - Plan de extras cambiado a smart components + colisiones + PLr/PL.
-  - Nuevas tareas T31 (`CalibData`), T32 (inercias), T33 (lista para la demo) y T35 (push del merge).
-  - Calendario rehecho.
+- 2026-10-30 · Creado.
+- 2026-11-05 (mañana) · Revisión de `main` (`d14f559`); plan de extras; T31–T35.
+- 2026-11-05 (tarde, proyecto de Claude) · Decisión C; distancias; Excel empezado; 2024.
+- 2026-11-05 (tarde, Peru en `main`) · T1 y T19 hechas; T4 decidida; T36 (parpadeo) y T37 (juntar la seguridad).
+- 2026-11-05 (noche) · Excel completo; una cortina por hueco; valla y equipos modelados en la copia de práctica; radio 1950, carretilla, SF5, `EStop_Inside`, topes; nuevas T39, T40, T41.
+- 2026-11-06 · Fusión de las dos versiones del documento; tiempo de parada renumerado a T42; rama `joaquin-valla` con la copia de práctica.
