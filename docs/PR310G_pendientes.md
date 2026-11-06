@@ -1,5 +1,7 @@
 # PR310G – Pendientes del proyecto de paletizado
 
+> **Organización del repositorio (6 nov):** el programa final está en `rapid/` y la estación final en `station/Pallet_Project.rspag`. Las carpetas `PalletProgram_28-10`, `PalletProgram_29-10` y `PalletProgramV1` que se citan más abajo están ahora en `history/rapid/` (`2026-10-28`, `2026-10-29`, `V1`), y `PalletProgram_6-11` es la actual `rapid/`. Los vídeos están en `media/`.
+
 Documento vivo: lo que falta para aprobar y para sacar la A. Claude lo actualiza cada vez que hacemos algo o cambia una decisión (ver el registro de cambios al final).
 
 - Última revisión: **5 nov 2026**, sobre `main` (`d14f559`, Peru, 5 nov 01:59). Código de referencia: `PalletProgram_29-10/`, idéntico al que va dentro de `Pallet_Project.rspag`.

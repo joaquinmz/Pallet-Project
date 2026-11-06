@@ -1,5 +1,7 @@
 # PR310G – Pallet Project: memoria de decisiones
 
+> **Organización del repositorio (6 nov):** el programa final está en `rapid/` y la estación final en `station/Pallet_Project.rspag`. Las carpetas `PalletProgram_28-10`, `PalletProgram_29-10` y `PalletProgramV1` que se citan más abajo están ahora en `history/rapid/` (`2026-10-28`, `2026-10-29`, `V1`), y `PalletProgram_6-11` es la actual `rapid/`. Los vídeos están en `media/`.
+
 Resumen de lo decidido y hecho en la estación `Pallet_Project` (RobotStudio 2025, controlador IRC5 RobotWare 6.13.02), actualizado el 1 nov 2026. Coordenadas en mm, respecto al mundo de la estación salvo que se diga otra cosa.
 
 Autores: Peru Mendivil y Joaquín Moreno (Group 2, JMPM). Repo: github.com/joaquinmz/Pallet-Project (rama `main` = Peru, `second-main` = caja 2 de Joaquín, `cambios-peru-28-10` = trabajo de Peru del 28 oct, `cambios-peru-29-10` = trabajo del 29 oct, `cambios-peru-30-10` = smart components del 30 oct, `cambios-peru-01-11` = cinta 2 del 1 nov). **La versión de trabajo actual del programa es la carpeta `PalletProgram_29-10`** (guardada desde RobotStudio); `PalletProgram_28-10` es la de ayer y `PalletProgramV1` una anterior (con una copia de esta memoria).

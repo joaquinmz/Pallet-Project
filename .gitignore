@@ -1,6 +1,10 @@
 *.bak
 
-# Videos de pruebas (solo se sube el comprimido del ultimo)
-RobotStudio 10-29.mp4
-RobotStudio 10-29 v2.mp4
-RobotStudio 10-29 v3.mp4
+# Grabaciones originales sin comprimir (demasiado grandes para GitHub)
+RobotStudio *.mp4
+*.rspag.zip
+
+# Herramientas de video
+node_modules/
+tools/video/remotion/public/
+tools/video/remotion/out/
